@@ -36,12 +36,26 @@ async function Hero({
   locale: string;
   t: Awaited<ReturnType<typeof getTranslations<'home'>>>;
 }) {
+  // Surface the regulations as inline chips so the global-compliance
+  // promise is communicated before the user reads a single sentence.
+  const headlineFrameworks = ['GDPR', 'EU AI Act', 'LGPD', 'APPI'];
+
   return (
     <section className="relative pt-20 md:pt-28">
-      {/* Subtle radial gradient — Shadcn-style backdrop, never noisy. */}
+      {/* Soft radial gradient backdrop — Shadcn-clean, never noisy. */}
       <div
         aria-hidden
         className="pointer-events-none absolute inset-0 -z-10 [background:radial-gradient(60%_60%_at_50%_0%,hsl(var(--accent))_0%,transparent_60%)]"
+      />
+      {/* Hairline grid for the developer-feel without the noise. */}
+      <div
+        aria-hidden
+        className="pointer-events-none absolute inset-x-0 top-0 -z-10 h-[420px] [mask-image:linear-gradient(to_bottom,black,transparent)]"
+        style={{
+          backgroundImage:
+            'linear-gradient(to right, hsl(var(--border)) 1px, transparent 1px), linear-gradient(to bottom, hsl(var(--border)) 1px, transparent 1px)',
+          backgroundSize: '64px 64px'
+        }}
       />
 
       <div className="mx-auto flex max-w-3xl flex-col items-center gap-6 text-center animate-fade-up">
@@ -72,6 +86,18 @@ async function Hero({
             <Link href="/sample-report">{t('hero.secondaryCta')}</Link>
           </Button>
         </div>
+
+        <ul className="mt-6 flex flex-wrap items-center justify-center gap-2 text-xs text-muted-foreground">
+          {headlineFrameworks.map((name) => (
+            <li
+              key={name}
+              className="rounded-full border bg-background/60 px-2.5 py-1 backdrop-blur"
+            >
+              {name}
+            </li>
+          ))}
+          <li className="px-2 text-muted-foreground/60">+{FRAMEWORKS.length - 4}</li>
+        </ul>
       </div>
     </section>
   );

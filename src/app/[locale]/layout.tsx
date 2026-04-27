@@ -52,7 +52,7 @@ export default async function LocaleLayout({ children, params: { locale } }: Lay
             <div className="container flex h-16 items-center justify-between gap-4">
               <Link href="/" className="inline-flex items-center gap-2">
                 <Lexymark className="h-6 w-6" />
-                <span className="text-base font-semibold tracking-tight">Lexy</span>
+                <span className="text-base font-semibold tracking-tight">LexyFlow</span>
               </Link>
 
               <nav className="hidden items-center gap-6 text-sm md:flex">

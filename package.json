@@ -1,9 +1,9 @@
 {
-  "name": "lexy",
+  "name": "lexyflow",
   "version": "0.1.0",
   "private": true,
-  "description": "Lexy — the AI assistant for instant global compliance. Audits documents against GDPR, EU AI Act, LGPD and APPI, with a Multi-Pass engine that delivers reports in any language.",
-  "homepage": "https://github.com/repuguardapp/Lexy",
+  "description": "LexyFlow — Global compliance, automated. Audits documents against GDPR, EU AI Act, LGPD and APPI, with a Multi-Pass engine that delivers reports in any language. lexyflow.com",
+  "homepage": "https://lexyflow.com",
   "repository": {
     "type": "git",
     "url": "git+https://github.com/repuguardapp/Lexy.git"

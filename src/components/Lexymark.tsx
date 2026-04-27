@@ -1,8 +1,8 @@
 import type { SVGProps } from 'react';
 
 /**
- * Lexy wordmark glyph — a stylised "L" rendered as a stacked legal indent
- * (paragraph + section bar). Sober, monochrome, currentColor-friendly.
+ * LexyFlow wordmark glyph — a stylised "L" rendered as a stacked legal
+ * indent (paragraph + section bar). Sober, monochrome, currentColor-friendly.
  */
 export function Lexymark(props: SVGProps<SVGSVGElement>) {
   return (

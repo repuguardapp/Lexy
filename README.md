@@ -1,11 +1,13 @@
 <div align="center">
 
-# Lexy
+# LexyFlow
 
-**The AI assistant for instant global compliance.**
+**Global compliance, automated.**
 
 Audit privacy documents against GDPR, the EU AI Act, LGPD and APPI in
 seconds. Get the report in any language. Zero-Knowledge by design.
+
+🌐 **[lexyflow.com](https://lexyflow.com)**
 
 [![Stack](https://img.shields.io/badge/stack-Next.js%2014%20·%20TypeScript%20·%20Supabase-111827)](#stack)
 [![i18n](https://img.shields.io/badge/i18n-EN%20·%20FR%20·%20ES%20·%20DE%20·%20PT--BR%20·%20JA-22c55e)](#internationalisation)
@@ -16,14 +18,14 @@ seconds. Get the report in any language. Zero-Knowledge by design.
 
 ---
 
-## What Lexy is
+## What LexyFlow is
 
-Lexy is a SaaS that audits a controller's privacy documents — policies,
-contracts, model cards, DPIAs — against the world's major data and AI
-regulations, then delivers a board-ready report **in the auditor's
-language of choice**.
+LexyFlow is a SaaS that audits a controller's privacy documents —
+policies, contracts, model cards, DPIAs — against the world's major
+data and AI regulations, then delivers a board-ready report **in the
+auditor's language of choice**.
 
-> *"L'assistant IA pour votre conformité mondiale instantanée."*
+> *"LexyFlow: la conformité mondiale, automatisée."*
 
 Six market pillars define the product:
 
@@ -116,7 +118,7 @@ Multi-Pass prompt picks it up automatically.
 
 Two passes, two reasons:
 
-1. **Caching.** Pass 1 is the expensive step. Lexy caches it per
+1. **Caching.** Pass 1 is the expensive step. LexyFlow caches it per
    `documentHash` and re-runs pass 2 on demand for the marginal cost of
    a translation call.
 2. **Faithfulness.** Citations, statute numbers and verbatim evidence
@@ -187,6 +189,31 @@ npm run typecheck            # tsc --noEmit, strict mode
 
 ---
 
+## Deployment
+
+LexyFlow is designed for Vercel + Supabase. Set the following in your
+Vercel project's environment variables:
+
+| Variable                       | Required |
+|--------------------------------|----------|
+| `NEXT_PUBLIC_SUPABASE_URL`     | ✅ |
+| `NEXT_PUBLIC_SUPABASE_ANON_KEY`| ✅ |
+| `SUPABASE_SERVICE_ROLE_KEY`    | ✅ |
+| `ANTHROPIC_API_KEY`            | ✅ |
+| `OPENAI_API_KEY`               | ✅ |
+| `STRIPE_SECRET_KEY`            | ✅ |
+| `STRIPE_WEBHOOK_SECRET`        | ✅ |
+| `STRIPE_PRICE_STARTER`         | ✅ |
+| `STRIPE_PRICE_PRO`             | ✅ |
+| `STRIPE_PRICE_ENTERPRISE`      | ✅ |
+| `NEXT_PUBLIC_APP_URL`          | ✅ (`https://lexyflow.com`) |
+| `NEXT_PUBLIC_APP_NAME`         | ✅ (`LexyFlow`) |
+
+Point the `lexyflow.com` domain at the Vercel project. The app handles
+subdomain-less locale routing automatically (`/en`, `/fr`, `/ja`…).
+
+---
+
 ## Roadmap
 
 - [x] Multi-Pass engine (Claude pass 1 → GPT-4o pass 2)
@@ -195,6 +222,7 @@ npm run typecheck            # tsc --noEmit, strict mode
 - [x] Zero-Knowledge document handling
 - [x] Hreflang + multilingual sitemap
 - [x] Shadcn/UI design system
+- [x] LexyFlow brand + lexyflow.com positioning
 - [ ] PDF report rendering with locale-aware typography (Noto + Source Han)
 - [ ] DPIA wizard (interactive, multi-step, locale-aware)
 - [ ] Continuous monitoring (re-audit on document update)
@@ -205,4 +233,4 @@ npm run typecheck            # tsc --noEmit, strict mode
 
 ## License
 
-Proprietary — © Lexy. All rights reserved.
+Proprietary — © LexyFlow. All rights reserved.

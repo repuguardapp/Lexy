@@ -1,11 +1,11 @@
 {
   "brand": {
-    "name": "Lexy",
-    "tagline": "グローバル・コンプライアンスを瞬時に。AI アシスタント Lexy。"
+    "name": "LexyFlow",
+    "tagline": "グローバル・コンプライアンスを、自動化。"
   },
   "meta": {
-    "title": "Lexy — グローバル・コンプライアンスを、あなたの言語で。",
-    "description": "Lexy は GDPR、AI法、LGPD、APPI に対してドキュメントを監査し、お好みの言語でレポートを届ける AI アシスタントです。"
+    "title": "LexyFlow — グローバル・コンプライアンスを、自動化。",
+    "description": "LexyFlow は GDPR、AI法、LGPD、APPI に対してドキュメントを数秒で監査し、お好みの言語でレポートを届けます。lexyflow.com"
   },
   "nav": {
     "product": "プロダクト",
@@ -17,8 +17,8 @@
   "home": {
     "hero": {
       "eyebrow": "数秒で完了するグローバル・コンプライアンス",
-      "title": "グローバル・コンプライアンスを瞬時に。AI アシスタント Lexy。",
-      "subtitle": "ポリシー・契約書・モデルカードをアップロードしてください。Lexy は GDPR、AI法、LGPD、APPI と数秒で突合し、選択した言語でレポートを作成します。",
+      "title": "LexyFlow：グローバル・コンプライアンスを、自動化。",
+      "subtitle": "ポリシー・契約書・モデルカードをアップロードしてください。LexyFlow は GDPR、AI法、LGPD、APPI と数秒で突合し、選択した言語でレポートを作成します。",
       "cta": "無料で監査を開始",
       "secondaryCta": "サンプルレポートを見る"
     },
@@ -31,7 +31,7 @@
       "title": "グローバルなコンプライアンス・チームのために",
       "multiPass": {
         "title": "Multi-Pass エンジン",
-        "body": "Lexy は基準言語で監査を行い、その後どの BCP-47 言語にもレポートをローカライズします。法的引用は原文のまま保持されます。"
+        "body": "LexyFlow は基準言語で監査を行い、その後どの BCP-47 言語にもレポートをローカライズします。法的引用は原文のまま保持されます。"
       },
       "zeroKnowledge": {
         "title": "Zero-Knowledge 設計",
@@ -56,14 +56,14 @@
     "upload": "ドキュメントをアップロード",
     "uploadHint": "PDF、DOCX、MD、TXT — 最大 25 MB。解析後に削除されます。",
     "targetLanguage": "レポートの言語",
-    "targetLanguageHint": "任意の言語を選択できます — Lexy が最終レポートを翻訳します。",
+    "targetLanguageHint": "任意の言語を選択できます — LexyFlow が最終レポートを翻訳します。",
     "framework": "法的フレームワーク",
     "submit": "監査を実行",
-    "running": "Lexy が監査中 — 通常 1 分以内に完了します。",
+    "running": "LexyFlow が監査中 — 通常 1 分以内に完了します。",
     "zeroKnowledge": "Zero-Knowledge：レポート生成後、ドキュメントはディスクとメモリから即座に削除されます。"
   },
   "footer": {
-    "copyright": "© {year} Lexy. All rights reserved.",
+    "copyright": "© {year} LexyFlow. All rights reserved.",
     "privacy": "プライバシー",
     "terms": "利用規約"
   }

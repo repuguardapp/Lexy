@@ -1,11 +1,11 @@
 {
   "brand": {
-    "name": "Lexy",
-    "tagline": "The AI assistant for instant global compliance."
+    "name": "LexyFlow",
+    "tagline": "Global compliance, automated."
   },
   "meta": {
-    "title": "Lexy — Instant global compliance, in any language.",
-    "description": "Lexy is the AI assistant that audits your documents against GDPR, the EU AI Act, LGPD and APPI — and delivers the report in any language."
+    "title": "LexyFlow — Global compliance, automated.",
+    "description": "LexyFlow audits your documents against GDPR, the EU AI Act, LGPD and APPI in seconds — and delivers the report in any language. lexyflow.com"
   },
   "nav": {
     "product": "Product",
@@ -17,8 +17,8 @@
   "home": {
     "hero": {
       "eyebrow": "Global compliance, in seconds",
-      "title": "The AI assistant for instant global compliance.",
-      "subtitle": "Drop a policy, contract, or model card. Lexy cross-references it with GDPR, the EU AI Act, LGPD and APPI in seconds — and writes the report in your language.",
+      "title": "LexyFlow: global compliance, automated.",
+      "subtitle": "Drop a policy, contract, or model card. LexyFlow cross-references it with GDPR, the EU AI Act, LGPD and APPI in seconds — and writes the report in your language.",
       "cta": "Run a free audit",
       "secondaryCta": "View a sample report"
     },
@@ -31,7 +31,7 @@
       "title": "Built for global compliance teams",
       "multiPass": {
         "title": "Multi-Pass engine",
-        "body": "Lexy audits in a canonical pivot language, then localizes the report into any BCP-47 language while keeping every legal citation verbatim."
+        "body": "LexyFlow audits in a canonical pivot language, then localizes the report into any BCP-47 language while keeping every legal citation verbatim."
       },
       "zeroKnowledge": {
         "title": "Zero-Knowledge by design",
@@ -56,14 +56,14 @@
     "upload": "Upload a document",
     "uploadHint": "PDF, DOCX, MD or TXT — up to 25 MB. Files are deleted after analysis.",
     "targetLanguage": "Report language",
-    "targetLanguageHint": "Choose any language — Lexy will translate the final report.",
+    "targetLanguageHint": "Choose any language — LexyFlow will translate the final report.",
     "framework": "Legal framework",
     "submit": "Run audit",
-    "running": "Lexy is auditing — this usually takes under a minute.",
+    "running": "LexyFlow is auditing — this usually takes under a minute.",
     "zeroKnowledge": "Zero-Knowledge: your document is wiped from disk and memory once the report is rendered."
   },
   "footer": {
-    "copyright": "© {year} Lexy. All rights reserved.",
+    "copyright": "© {year} LexyFlow. All rights reserved.",
     "privacy": "Privacy",
     "terms": "Terms"
   }

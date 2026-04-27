@@ -1,11 +1,11 @@
 {
   "brand": {
-    "name": "Lexy",
-    "tagline": "O assistente de IA para sua conformidade global instantânea."
+    "name": "LexyFlow",
+    "tagline": "A conformidade global, automatizada."
   },
   "meta": {
-    "title": "Lexy — Conformidade global instantânea, no seu idioma.",
-    "description": "Lexy é o assistente de IA que audita seus documentos contra LGPD, GDPR, AI Act e APPI — e entrega o relatório no seu idioma."
+    "title": "LexyFlow — A conformidade global, automatizada.",
+    "description": "LexyFlow audita seus documentos contra LGPD, GDPR, AI Act e APPI em segundos — e entrega o relatório no seu idioma. lexyflow.com"
   },
   "nav": {
     "product": "Produto",
@@ -17,8 +17,8 @@
   "home": {
     "hero": {
       "eyebrow": "Conformidade global, em segundos",
-      "title": "O assistente de IA para sua conformidade global instantânea.",
-      "subtitle": "Envie uma política, contrato ou ficha de modelo. Lexy confronta com LGPD, GDPR, AI Act e APPI em segundos — e escreve o relatório no seu idioma.",
+      "title": "LexyFlow: a conformidade global, automatizada.",
+      "subtitle": "Envie uma política, contrato ou ficha de modelo. LexyFlow confronta com LGPD, GDPR, AI Act e APPI em segundos — e escreve o relatório no seu idioma.",
       "cta": "Iniciar auditoria gratuita",
       "secondaryCta": "Ver relatório de exemplo"
     },
@@ -31,7 +31,7 @@
       "title": "Feito para times de conformidade globais",
       "multiPass": {
         "title": "Motor Multi-Pass",
-        "body": "Lexy audita em um idioma pivô canônico e localiza o relatório em qualquer idioma BCP-47, mantendo cada citação legal palavra por palavra."
+        "body": "LexyFlow audita em um idioma pivô canônico e localiza o relatório em qualquer idioma BCP-47, mantendo cada citação legal palavra por palavra."
       },
       "zeroKnowledge": {
         "title": "Zero-Knowledge por design",
@@ -56,14 +56,14 @@
     "upload": "Enviar um documento",
     "uploadHint": "PDF, DOCX, MD ou TXT — até 25 MB. Os arquivos são apagados após a análise.",
     "targetLanguage": "Idioma do relatório",
-    "targetLanguageHint": "Escolha qualquer idioma — Lexy traduzirá o relatório final.",
+    "targetLanguageHint": "Escolha qualquer idioma — LexyFlow traduzirá o relatório final.",
     "framework": "Marco legal",
     "submit": "Executar auditoria",
-    "running": "Lexy está auditando — geralmente leva menos de um minuto.",
+    "running": "LexyFlow está auditando — geralmente leva menos de um minuto.",
     "zeroKnowledge": "Zero-Knowledge: seu documento é apagado do disco e da memória assim que o relatório é gerado."
   },
   "footer": {
-    "copyright": "© {year} Lexy. Todos os direitos reservados.",
+    "copyright": "© {year} LexyFlow. Todos os direitos reservados.",
     "privacy": "Privacidade",
     "terms": "Termos"
   }

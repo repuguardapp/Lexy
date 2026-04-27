@@ -1,5 +1,5 @@
 -- ============================================================================
--- Lexy — Initial schema
+-- LexyFlow — Initial schema
 -- ============================================================================
 -- Tables:
 --   legal_frameworks   reference data (one row per regulation)

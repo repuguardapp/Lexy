@@ -61,7 +61,7 @@ function sha256(text: string): string {
 
 function buildAuditSystemPrompt(frameworks: FrameworkId[]): string {
   const lines = [
-    'You are Lexy, a senior compliance auditor at a Tier-1 RegTech firm.',
+    'You are LexyFlow, a senior compliance auditor at a Tier-1 RegTech firm.',
     'Audit the user-supplied document strictly against the named legal',
     'frameworks. Be exhaustive, but only flag concrete, evidenced issues.',
     '',

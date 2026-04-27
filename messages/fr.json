@@ -1,11 +1,11 @@
 {
   "brand": {
-    "name": "Lexy",
-    "tagline": "L'assistant IA pour votre conformité mondiale instantanée."
+    "name": "LexyFlow",
+    "tagline": "La conformité mondiale, automatisée."
   },
   "meta": {
-    "title": "Lexy — Conformité mondiale instantanée, dans votre langue.",
-    "description": "Lexy est l'assistant IA qui audite vos documents face au RGPD, à l'AI Act, à la LGPD et à l'APPI — et livre le rapport dans la langue de votre choix."
+    "title": "LexyFlow — La conformité mondiale, automatisée.",
+    "description": "LexyFlow audite vos documents face au RGPD, à l'AI Act, à la LGPD et à l'APPI en quelques secondes — et livre le rapport dans la langue de votre choix. lexyflow.com"
   },
   "nav": {
     "product": "Produit",
@@ -17,8 +17,8 @@
   "home": {
     "hero": {
       "eyebrow": "Conformité mondiale, en quelques secondes",
-      "title": "L'assistant IA pour votre conformité mondiale instantanée.",
-      "subtitle": "Déposez une politique, un contrat ou une fiche modèle. Lexy le confronte au RGPD, à l'AI Act, à la LGPD et à l'APPI en quelques secondes — et rédige le rapport dans votre langue.",
+      "title": "LexyFlow : la conformité mondiale, automatisée.",
+      "subtitle": "Déposez une politique, un contrat ou une fiche modèle. LexyFlow le confronte au RGPD, à l'AI Act, à la LGPD et à l'APPI en quelques secondes — et rédige le rapport dans votre langue.",
       "cta": "Lancer un audit gratuit",
       "secondaryCta": "Voir un rapport d'exemple"
     },
@@ -31,7 +31,7 @@
       "title": "Pensé pour les équipes conformité internationales",
       "multiPass": {
         "title": "Moteur Multi-Pass",
-        "body": "Lexy analyse dans une langue pivot canonique, puis localise le rapport dans n'importe quelle langue BCP-47 en conservant chaque citation juridique mot pour mot."
+        "body": "LexyFlow analyse dans une langue pivot canonique, puis localise le rapport dans n'importe quelle langue BCP-47 en conservant chaque citation juridique mot pour mot."
       },
       "zeroKnowledge": {
         "title": "Zero-Knowledge par construction",
@@ -56,14 +56,14 @@
     "upload": "Déposer un document",
     "uploadHint": "PDF, DOCX, MD ou TXT — jusqu'à 25 Mo. Les fichiers sont supprimés après analyse.",
     "targetLanguage": "Langue du rapport",
-    "targetLanguageHint": "Choisissez n'importe quelle langue — Lexy traduira le rapport final.",
+    "targetLanguageHint": "Choisissez n'importe quelle langue — LexyFlow traduira le rapport final.",
     "framework": "Référentiel juridique",
     "submit": "Lancer l'audit",
-    "running": "Lexy audite — cela prend généralement moins d'une minute.",
+    "running": "LexyFlow audite — cela prend généralement moins d'une minute.",
     "zeroKnowledge": "Zero-Knowledge : votre document est effacé du disque et de la mémoire dès le rapport rendu."
   },
   "footer": {
-    "copyright": "© {year} Lexy. Tous droits réservés.",
+    "copyright": "© {year} LexyFlow. Tous droits réservés.",
     "privacy": "Confidentialité",
     "terms": "Conditions"
   }

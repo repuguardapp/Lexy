@@ -1,0 +1,70 @@
+{
+  "brand": {
+    "name": "Lexy",
+    "tagline": "O assistente de IA para sua conformidade global instantânea."
+  },
+  "meta": {
+    "title": "Lexy — Conformidade global instantânea, no seu idioma.",
+    "description": "Lexy é o assistente de IA que audita seus documentos contra LGPD, GDPR, AI Act e APPI — e entrega o relatório no seu idioma."
+  },
+  "nav": {
+    "product": "Produto",
+    "pricing": "Preços",
+    "docs": "Documentação",
+    "signIn": "Entrar",
+    "startAudit": "Iniciar auditoria"
+  },
+  "home": {
+    "hero": {
+      "eyebrow": "Conformidade global, em segundos",
+      "title": "O assistente de IA para sua conformidade global instantânea.",
+      "subtitle": "Envie uma política, contrato ou ficha de modelo. Lexy confronta com LGPD, GDPR, AI Act e APPI em segundos — e escreve o relatório no seu idioma.",
+      "cta": "Iniciar auditoria gratuita",
+      "secondaryCta": "Ver relatório de exemplo"
+    },
+    "trust": {
+      "frameworks": "Marcos cobertos",
+      "languages": "Idiomas nativos",
+      "extraLanguages": "idiomas adicionais sob demanda"
+    },
+    "features": {
+      "title": "Feito para times de conformidade globais",
+      "multiPass": {
+        "title": "Motor Multi-Pass",
+        "body": "Lexy audita em um idioma pivô canônico e localiza o relatório em qualquer idioma BCP-47, mantendo cada citação legal palavra por palavra."
+      },
+      "zeroKnowledge": {
+        "title": "Zero-Knowledge por design",
+        "body": "Documentos só vivem em memória. Buffers são zerados em toda saída. Persistimos o relatório, nunca sua fonte."
+      },
+      "global": {
+        "title": "Global desde o primeiro dia",
+        "body": "Seis idiomas nativos, checkout Stripe multimoeda, cálculo automático de impostos mundiais, hreflang em cada página."
+      }
+    }
+  },
+  "pricing": {
+    "title": "Preços",
+    "subtitle": "Pague na sua moeda local. Os impostos são calculados automaticamente.",
+    "starter": { "name": "Starter", "tagline": "Para fundadores e equipes pequenas" },
+    "pro": { "name": "Pro", "tagline": "Para scale-ups com dados regulados" },
+    "enterprise": { "name": "Enterprise", "tagline": "Para grupos multi-jurisdição" },
+    "perMonth": "/ mês",
+    "checkout": "Escolher este plano"
+  },
+  "audit": {
+    "upload": "Enviar um documento",
+    "uploadHint": "PDF, DOCX, MD ou TXT — até 25 MB. Os arquivos são apagados após a análise.",
+    "targetLanguage": "Idioma do relatório",
+    "targetLanguageHint": "Escolha qualquer idioma — Lexy traduzirá o relatório final.",
+    "framework": "Marco legal",
+    "submit": "Executar auditoria",
+    "running": "Lexy está auditando — geralmente leva menos de um minuto.",
+    "zeroKnowledge": "Zero-Knowledge: seu documento é apagado do disco e da memória assim que o relatório é gerado."
+  },
+  "footer": {
+    "copyright": "© {year} Lexy. Todos os direitos reservados.",
+    "privacy": "Privacidade",
+    "terms": "Termos"
+  }
+}

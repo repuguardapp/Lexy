@@ -1,0 +1,70 @@
+{
+  "brand": {
+    "name": "Lexy",
+    "tagline": "グローバル・コンプライアンスを瞬時に。AI アシスタント Lexy。"
+  },
+  "meta": {
+    "title": "Lexy — グローバル・コンプライアンスを、あなたの言語で。",
+    "description": "Lexy は GDPR、AI法、LGPD、APPI に対してドキュメントを監査し、お好みの言語でレポートを届ける AI アシスタントです。"
+  },
+  "nav": {
+    "product": "プロダクト",
+    "pricing": "料金",
+    "docs": "ドキュメント",
+    "signIn": "ログイン",
+    "startAudit": "監査を開始"
+  },
+  "home": {
+    "hero": {
+      "eyebrow": "数秒で完了するグローバル・コンプライアンス",
+      "title": "グローバル・コンプライアンスを瞬時に。AI アシスタント Lexy。",
+      "subtitle": "ポリシー・契約書・モデルカードをアップロードしてください。Lexy は GDPR、AI法、LGPD、APPI と数秒で突合し、選択した言語でレポートを作成します。",
+      "cta": "無料で監査を開始",
+      "secondaryCta": "サンプルレポートを見る"
+    },
+    "trust": {
+      "frameworks": "対応フレームワーク",
+      "languages": "ネイティブ対応言語",
+      "extraLanguages": "オンデマンドで追加可能"
+    },
+    "features": {
+      "title": "グローバルなコンプライアンス・チームのために",
+      "multiPass": {
+        "title": "Multi-Pass エンジン",
+        "body": "Lexy は基準言語で監査を行い、その後どの BCP-47 言語にもレポートをローカライズします。法的引用は原文のまま保持されます。"
+      },
+      "zeroKnowledge": {
+        "title": "Zero-Knowledge 設計",
+        "body": "ドキュメントはメモリ上にのみ存在します。終了時にバッファをゼロ化。保存するのはレポートのみで、ソースは保存しません。"
+      },
+      "global": {
+        "title": "初日からグローバル",
+        "body": "ネイティブ 6 言語、Stripe の多通貨チェックアウト、世界各国の自動税計算、各ページに hreflang。"
+      }
+    }
+  },
+  "pricing": {
+    "title": "料金",
+    "subtitle": "現地通貨で支払い。税は自動計算されます。",
+    "starter": { "name": "Starter", "tagline": "個人と小規模チーム向け" },
+    "pro": { "name": "Pro", "tagline": "規制データを扱うスケールアップ向け" },
+    "enterprise": { "name": "Enterprise", "tagline": "複数管轄を持つ企業グループ向け" },
+    "perMonth": "/ 月",
+    "checkout": "このプランを選択"
+  },
+  "audit": {
+    "upload": "ドキュメントをアップロード",
+    "uploadHint": "PDF、DOCX、MD、TXT — 最大 25 MB。解析後に削除されます。",
+    "targetLanguage": "レポートの言語",
+    "targetLanguageHint": "任意の言語を選択できます — Lexy が最終レポートを翻訳します。",
+    "framework": "法的フレームワーク",
+    "submit": "監査を実行",
+    "running": "Lexy が監査中 — 通常 1 分以内に完了します。",
+    "zeroKnowledge": "Zero-Knowledge：レポート生成後、ドキュメントはディスクとメモリから即座に削除されます。"
+  },
+  "footer": {
+    "copyright": "© {year} Lexy. All rights reserved.",
+    "privacy": "プライバシー",
+    "terms": "利用規約"
+  }
+}

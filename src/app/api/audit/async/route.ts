@@ -1,0 +1,111 @@
+import { NextResponse } from 'next/server';
+import { z } from 'zod';
+import { runMultiPassAudit } from '@/lib/multi-pass-engine';
+import { supabaseService } from '@/lib/supabase';
+import { withEphemeralDocument } from '@/lib/zero-knowledge';
+import type { FrameworkId } from '@/lib/legal-frameworks';
+
+/**
+ * Asynchronous audit endpoint.
+ *
+ * For documents close to or over the synchronous 25 MB limit we accept the
+ * upload, immediately return a `pending` audit row, and run the Multi-Pass
+ * pipeline as a fire-and-forget background task. The client polls
+ * `/api/audit/[id]` for completion. This pattern survives serverless
+ * timeouts because the Function lifetime stays bounded by the response.
+ *
+ * Note: in a stricter deployment we would dispatch to a queue (QStash,
+ * SQS, Supabase pg_cron). The inline pattern is sufficient for the MVP.
+ */
+
+export const runtime = 'nodejs';
+export const maxDuration = 60;
+
+const Meta = z.object({
+  organizationId: z.string().uuid(),
+  frameworks: z.string().transform((s) => s.split(',') as FrameworkId[]),
+  targetLanguage: z.string().min(2).max(10)
+});
+
+export async function POST(request: Request) {
+  const form = await request.formData();
+  const file = form.get('document');
+  if (!(file instanceof Blob)) {
+    return NextResponse.json({ error: 'document_required' }, { status: 400 });
+  }
+
+  const meta = Meta.parse({
+    organizationId: form.get('organizationId'),
+    frameworks: form.get('frameworks'),
+    targetLanguage: form.get('targetLanguage')
+  });
+
+  const buffer = Buffer.from(await file.arrayBuffer());
+  const db = supabaseService();
+
+  const { data: pending, error } = await db
+    .from('audits')
+    .insert({
+      organization_id: meta.organizationId,
+      document_hash: 'pending',
+      frameworks: meta.frameworks,
+      status: 'pending',
+      language: meta.targetLanguage
+    })
+    .select('id')
+    .single();
+
+  if (error || !pending) {
+    return NextResponse.json({ error: 'persistence_failed' }, { status: 500 });
+  }
+
+  // Fire-and-forget; client polls.
+  void (async () => {
+    try {
+      await db.from('audits').update({ status: 'running' }).eq('id', pending.id);
+      const report = await withEphemeralDocument(buffer, async (text) =>
+        runMultiPassAudit({
+          documentText: text,
+          frameworks: meta.frameworks,
+          targetLanguage: meta.targetLanguage
+        })
+      );
+
+      await db
+        .from('audits')
+        .update({
+          status: 'completed',
+          document_hash: report.documentHash,
+          risk_score: report.riskScore,
+          summary: report.summary,
+          completed_at: report.generatedAt
+        })
+        .eq('id', pending.id);
+
+      if (report.findings.length > 0) {
+        await db.from('audit_findings').insert(
+          report.findings.map((f) => ({
+            audit_id: pending.id,
+            framework_id: f.framework,
+            citation: f.citation,
+            severity: f.severity,
+            title: f.title,
+            body: f.body,
+            recommendation: f.recommendation,
+            evidence: f.evidence
+          }))
+        );
+      }
+    } catch (err) {
+      await db
+        .from('audits')
+        .update({
+          status: 'failed',
+          error_message: err instanceof Error ? err.message : String(err)
+        })
+        .eq('id', pending.id);
+    }
+  })();
+
+  return NextResponse.json({ auditId: pending.id, status: 'pending' }, { status: 202 });
+}

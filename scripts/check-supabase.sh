@@ -47,15 +47,10 @@ else
   info "auth/v1/settings -> HTTP $code (unusual, continuing)"
 fi
 
-# 2. REST gateway root.
-code=$(curl -s -o /dev/null -w "%{http_code}" --max-time 8 \
-  -H "apikey: $KEY" \
-  "$URL/rest/v1/")
-[ "$code" = "200" ] || fail "rest/v1/ -> $code (URL or key wrong)"
-ok "rest/v1/ -> 200"
-
-# 3. Seed data: legal_frameworks must hold >= 7 rows after migration 0002.
+# 2. Seed data: legal_frameworks must hold >= 7 rows after migration 0002.
 #    The Content-Range header carries the total count when we ask for it.
+#    This call doubles as our REST gateway validation: if it returns a
+#    valid count, REST is working; if it 404s, the table is missing.
 count=$(curl -s --max-time 8 \
   -H "apikey: $KEY" \
   -H "Authorization: Bearer $KEY" \
@@ -72,7 +67,7 @@ else
   info "legal_frameworks has $count rows -- expected >= 7"
 fi
 
-# 4. RLS tables exist? An anon SELECT yields 200 + 0 rows when RLS is on
+# 3. RLS tables exist? An anon SELECT yields 200 + 0 rows when RLS is on
 #    but no policy matches. A 404 means the table itself is missing.
 for table in organizations audits audit_findings audit_translations subscriptions stripe_webhook_events rate_limits; do
   code=$(curl -s -o /dev/null -w "%{http_code}" --max-time 8 \

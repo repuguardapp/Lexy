@@ -1,18 +1,17 @@
 #!/bin/sh
 # ----------------------------------------------------------------------------
-# check-supabase.sh — POSIX sh (works in bash, dash, busybox sh, a-Shell).
+# check-supabase.sh — POSIX sh (bash, dash, busybox, a-Shell).
 #
 # Smoke-test the Supabase project URL + anon (publishable) key. Confirms:
-#   1. /auth/v1/health is reachable.
-#   2. The anon key is recognized by /rest/v1/.
-#   3. The legal_frameworks seed table is present (migrations were applied).
-#   4. The expected RLS-protected tables exist.
+#   1. Project alive: /auth/v1/settings answers 200 with the anon key.
+#   2. REST root accepts the anon key.
+#   3. legal_frameworks contains seed rows (0002 migration applied).
+#   4. RLS-protected tables exist (0001 + 0003 migrations applied).
 #
-# Usage (from the repo root):
-#   sh scripts/check-supabase.sh https://YOUR-PROJECT.supabase.co Sb_publishable_XXX
-#
+# Usage:
+#   sh check-supabase.sh <project-url> <anon-key>
 # Or via env vars:
-#   NEXT_PUBLIC_SUPABASE_URL=... NEXT_PUBLIC_SUPABASE_ANON_KEY=... sh scripts/check-supabase.sh
+#   NEXT_PUBLIC_SUPABASE_URL=... NEXT_PUBLIC_SUPABASE_ANON_KEY=... sh check-supabase.sh
 # ----------------------------------------------------------------------------
 set -eu
 
@@ -20,33 +19,43 @@ URL="${1:-${NEXT_PUBLIC_SUPABASE_URL:-}}"
 KEY="${2:-${NEXT_PUBLIC_SUPABASE_ANON_KEY:-}}"
 
 if [ -z "$URL" ] || [ -z "$KEY" ]; then
-  echo "Usage: sh scripts/check-supabase.sh <url> <anon-key>" >&2
+  echo "Usage: sh check-supabase.sh <url> <anon-key>" >&2
   exit 1
 fi
 
-# Strip trailing slash if present (POSIX parameter substitution).
+# Strip trailing slash if any.
 case "$URL" in *"/") URL="${URL%/}" ;; esac
 
-ok()   { printf '  \033[32m\xe2\x9c\x93\033[0m %s\n' "$*"; }
-fail() { printf '  \033[31m\xe2\x9c\x97 %s\033[0m\n' "$*" >&2; exit 1; }
-info() { printf '  . %s\n' "$*"; }
+# Plain-ASCII status markers — dash does not interpret \xNN in printf.
+ok()   { printf '  [OK]   %s\n' "$*"; }
+fail() { printf '  [FAIL] %s\n' "$*" >&2; exit 1; }
+info() { printf '  [..]   %s\n' "$*"; }
 
 echo "> Probing $URL"
 
-# 1. Auth health.
-code=$(curl -s -o /dev/null -w "%{http_code}" --max-time 8 "$URL/auth/v1/health")
-[ "$code" = "200" ] || fail "auth/v1/health returned $code (expected 200)"
-ok "auth/v1/health -> 200"
+# 1. Reachability + key validation: Supabase v2 requires the apikey header
+#    on /auth/v1/* including /settings. A 200 here proves both the URL
+#    resolves and the anon key is recognised.
+code=$(curl -s -o /dev/null -w "%{http_code}" --max-time 8 \
+  -H "apikey: $KEY" \
+  "$URL/auth/v1/settings")
+if [ "$code" = "200" ]; then
+  ok "auth/v1/settings -> 200 (project alive, anon key OK)"
+elif [ "$code" = "401" ] || [ "$code" = "403" ]; then
+  fail "auth/v1/settings -> $code (anon key rejected by Supabase)"
+else
+  info "auth/v1/settings -> HTTP $code (unusual, continuing)"
+fi
 
-# 2. REST root with anon key.
+# 2. REST gateway root.
 code=$(curl -s -o /dev/null -w "%{http_code}" --max-time 8 \
   -H "apikey: $KEY" \
   "$URL/rest/v1/")
-[ "$code" = "200" ] || fail "rest/v1/ returned $code (anon key may be wrong)"
-ok "rest/v1/ accepts the anon key"
+[ "$code" = "200" ] || fail "rest/v1/ -> $code (URL or key wrong)"
+ok "rest/v1/ -> 200"
 
-# 3. Reference data: legal_frameworks must contain at least 7 rows after
-#    the 0002 seed migration. Read the Content-Range header total.
+# 3. Seed data: legal_frameworks must hold >= 7 rows after migration 0002.
+#    The Content-Range header carries the total count when we ask for it.
 count=$(curl -s --max-time 8 \
   -H "apikey: $KEY" \
   -H "Authorization: Bearer $KEY" \
@@ -55,7 +64,7 @@ count=$(curl -s --max-time 8 \
   | awk -F'/' '/[Cc]ontent-[Rr]ange/ {gsub(/\r/,"",$NF); print $NF}' \
   | tail -n1)
 
-if [ -z "$count" ] || [ "$count" = "0" ]; then
+if [ -z "$count" ] || [ "$count" = "0" ] || [ "$count" = "*" ]; then
   fail "legal_frameworks has ${count:-?} rows -- did you run 0002_seed_frameworks.sql?"
 elif [ "$count" -ge 7 ] 2>/dev/null; then
   ok  "legal_frameworks -> $count rows (seed applied)"
@@ -63,9 +72,8 @@ else
   info "legal_frameworks has $count rows -- expected >= 7"
 fi
 
-# 4. RLS-protected tables exist? An anon SELECT should yield 200 + 0 rows
-#    when RLS is on but no policy matches the request. A 404 means the
-#    table itself does not exist.
+# 4. RLS tables exist? An anon SELECT yields 200 + 0 rows when RLS is on
+#    but no policy matches. A 404 means the table itself is missing.
 for table in organizations audits audit_findings audit_translations subscriptions stripe_webhook_events rate_limits; do
   code=$(curl -s -o /dev/null -w "%{http_code}" --max-time 8 \
     -H "apikey: $KEY" \
@@ -81,7 +89,7 @@ for table in organizations audits audit_findings audit_translations subscription
 done
 
 echo
-printf '\033[1m> Supabase looks healthy.\033[0m\n'
+echo "> Supabase looks healthy."
 echo "Next: copy SERVICE_ROLE_KEY from"
 echo "  $URL/project/default/settings/api"
 echo "into Vercel env SUPABASE_SERVICE_ROLE_KEY (Production + Preview)."

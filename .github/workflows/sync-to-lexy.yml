@@ -1,0 +1,57 @@
+name: Sync lexy/genesis → Lexy:main
+
+# Auto-mirror this branch to the public Lexy repo.
+#
+# Why this exists: the Claude Code sandbox can write to repuguard but not to
+# the Lexy repo (different MCP scope). This workflow runs in GitHub Actions
+# with a PAT secret and bridges the gap, so every iteration of LexyFlow
+# committed here lands automatically on github.com/repuguardapp/Lexy:main.
+#
+# REQUIRED SETUP (one time, done by repo owner):
+#   1. Create a fine-grained PAT at github.com/settings/personal-access-tokens
+#      with "Contents: read & write" on the `repuguardapp/Lexy` repo.
+#   2. In `repuguardapp/repuguard` → Settings → Secrets and variables →
+#      Actions → New repository secret:
+#         Name:  LEXY_PUSH_TOKEN
+#         Value: <the PAT>
+#   3. Push to lexy/genesis → this workflow propagates the commit to
+#      Lexy:main automatically.
+
+on:
+  push:
+    branches: [lexy/genesis]
+  workflow_dispatch:
+
+concurrency:
+  group: sync-to-lexy
+  cancel-in-progress: false
+
+jobs:
+  mirror:
+    name: Mirror to repuguardapp/Lexy
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+
+    steps:
+      - name: Guard — secret must be configured
+        if: ${{ secrets.LEXY_PUSH_TOKEN == '' }}
+        run: |
+          echo "::error::LEXY_PUSH_TOKEN secret is not set."
+          echo "::error::Add it under Settings → Secrets and variables → Actions."
+          exit 1
+
+      - name: Checkout lexy/genesis
+        uses: actions/checkout@v4
+        with:
+          ref: lexy/genesis
+          # Full history so the mirror push doesn't need shallow flag.
+          fetch-depth: 0
+
+      - name: Push to repuguardapp/Lexy:main
+        env:
+          LEXY_PUSH_TOKEN: ${{ secrets.LEXY_PUSH_TOKEN }}
+        run: |
+          git push \
+            "https://x-access-token:${LEXY_PUSH_TOKEN}@github.com/repuguardapp/Lexy.git" \
+            HEAD:main
+          echo "::notice::Lexy:main is now at $(git rev-parse HEAD)"

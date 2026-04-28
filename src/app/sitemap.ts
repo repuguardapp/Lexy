@@ -1,5 +1,5 @@
 import type { MetadataRoute } from 'next';
-import { discoverLocales } from '@/i18n/locales';
+import { discoverLocales } from '@/i18n/locales.server';
 
 /**
  * Multilingual sitemap. Each canonical path is emitted once with an

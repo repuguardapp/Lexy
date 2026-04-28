@@ -1,19 +1,15 @@
 import { beforeAll, describe, expect, it, vi } from 'vitest';
-import { buildHreflangAlternates } from '../src/lib/hreflang';
 
-vi.mock('../src/i18n/locales', async () => {
-  const actual = await vi.importActual<typeof import('../src/i18n/locales')>(
-    '../src/i18n/locales'
-  );
-  return {
-    ...actual,
-    discoverLocales: async () => ['en', 'fr', 'es', 'de', 'pt-br', 'ja']
-  };
-});
+vi.mock('../src/i18n/locales.server', () => ({
+  discoverLocales: async () => ['en', 'fr', 'es', 'de', 'pt-br', 'ja']
+}));
+vi.mock('server-only', () => ({}));
 
 beforeAll(() => {
   process.env.NEXT_PUBLIC_APP_URL = 'https://compliance.example.com';
 });
+
+const { buildHreflangAlternates } = await import('../src/lib/hreflang');
 
 describe('buildHreflangAlternates', () => {
   it('emits one entry per locale plus x-default', async () => {

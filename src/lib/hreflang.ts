@@ -1,4 +1,6 @@
-import { DEFAULT_LOCALE, discoverLocales } from '@/i18n/locales';
+import 'server-only';
+import { DEFAULT_LOCALE } from '@/i18n/locales';
+import { discoverLocales } from '@/i18n/locales.server';
 
 /**
  * Build the `<link rel="alternate" hreflang>` map for a given pathname.

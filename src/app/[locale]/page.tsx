@@ -1,7 +1,7 @@
 import { ArrowRight, Globe, Languages, ShieldCheck, Sparkles } from 'lucide-react';
 import { getTranslations, unstable_setRequestLocale } from 'next-intl/server';
 import { Link } from '@/i18n/navigation';
-import { discoverLocales } from '@/i18n/locales';
+import { discoverLocales } from '@/i18n/locales.server';
 import { FRAMEWORKS } from '@/lib/legal-frameworks';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';

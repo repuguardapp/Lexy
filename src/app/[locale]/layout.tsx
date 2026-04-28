@@ -7,7 +7,8 @@ import { LanguageSelector } from '@/components/LanguageSelector';
 import { Lexymark } from '@/components/Lexymark';
 import { Button } from '@/components/ui/button';
 import { Link } from '@/i18n/navigation';
-import { discoverLocales, getLocaleDescriptor, NATIVE_LOCALE_CODES } from '@/i18n/locales';
+import { getLocaleDescriptor, NATIVE_LOCALE_CODES } from '@/i18n/locales';
+import { discoverLocales } from '@/i18n/locales.server';
 import { buildHreflangAlternates } from '@/lib/hreflang';
 
 export async function generateStaticParams() {

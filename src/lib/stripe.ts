@@ -53,14 +53,15 @@ export async function createCheckoutSession(opts: CheckoutOptions) {
   const descriptor = getLocaleDescriptor(opts.locale);
   const stripeLocale = descriptor.stripeLocale as Stripe.Checkout.SessionCreateParams.Locale;
 
-  const session = await stripe().checkout.sessions.create({
+  // `exactOptionalPropertyTypes` forbids passing `undefined` for optional
+  // fields — we only include `customer_email` when we actually have one.
+  const params: Stripe.Checkout.SessionCreateParams = {
     mode: 'subscription',
     locale: stripeLocale,
     currency: descriptor.currency.toLowerCase(),
     line_items: [{ price: priceIdFor(opts.plan), quantity: 1 }],
     automatic_tax: { enabled: true },
     tax_id_collection: { enabled: true },
-    customer_email: opts.customerEmail,
     client_reference_id: opts.organizationId,
     allow_promotion_codes: true,
     billing_address_collection: 'required',
@@ -72,7 +73,11 @@ export async function createCheckoutSession(opts: CheckoutOptions) {
         ui_locale: opts.locale
       }
     }
-  });
+  };
 
-  return session;
+  if (opts.customerEmail) {
+    params.customer_email = opts.customerEmail;
+  }
+
+  return stripe().checkout.sessions.create(params);
 }

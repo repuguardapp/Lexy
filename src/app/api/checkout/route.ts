@@ -20,7 +20,15 @@ export async function POST(request: Request) {
   }
 
   const origin = request.headers.get('origin') ?? process.env.NEXT_PUBLIC_APP_URL ?? '';
-  const session = await createCheckoutSession({ ...parsed, origin });
+
+  // exactOptionalPropertyTypes — only forward customerEmail when defined.
+  const session = await createCheckoutSession({
+    plan: parsed.plan,
+    locale: parsed.locale,
+    organizationId: parsed.organizationId,
+    origin,
+    ...(parsed.customerEmail ? { customerEmail: parsed.customerEmail } : {})
+  });
 
   return NextResponse.json({ id: session.id, url: session.url });
 }

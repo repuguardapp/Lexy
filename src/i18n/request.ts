@@ -1,5 +1,6 @@
 import { getRequestConfig } from 'next-intl/server';
-import { DEFAULT_LOCALE, discoverLocales, getLocaleDescriptor } from './locales';
+import { DEFAULT_LOCALE, getLocaleDescriptor } from './locales';
+import { discoverLocales } from './locales.server';
 
 /**
  * next-intl server config.
@@ -12,7 +13,7 @@ export default getRequestConfig(async ({ locale }) => {
   const available = await discoverLocales();
   const resolved = available.includes(requested) ? requested : DEFAULT_LOCALE;
 
-  const messages = (await import(`@messages/${resolved}.json`)).default;
+  const messages = (await import(`../../messages/${resolved}.json`)).default;
   const descriptor = getLocaleDescriptor(resolved);
 
   return {

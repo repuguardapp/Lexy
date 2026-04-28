@@ -1,16 +1,12 @@
 /**
- * Locale registry.
+ * Locale registry — client-safe.
  *
- * The 6 native-supported locales below get a fully designed UI and a curated
- * dictionary in `messages/`. Any additional locale is supported dynamically by
- * the Multi-Pass engine without code changes — drop a `<bcp47>.json` file in
- * `messages/` and the loader will pick it up at runtime.
- *
- * `nativeLocales` therefore stays small and stable, while `discoverLocales()`
- * walks the messages directory at request time.
+ * Pure data and pure functions only. The 6 native locales below get a fully
+ * designed UI and a curated dictionary in `messages/`. Any additional locale
+ * is supported dynamically by the Multi-Pass engine without code changes —
+ * drop a `<bcp47>.json` file in `messages/` and the server-side loader will
+ * pick it up at runtime (see `./locales.server.ts`).
  */
-import { promises as fs } from 'node:fs';
-import path from 'node:path';
 
 export type LocaleCode =
   | 'en'
@@ -44,23 +40,6 @@ export const NATIVE_LOCALES: readonly LocaleDescriptor[] = [
 
 export const NATIVE_LOCALE_CODES = NATIVE_LOCALES.map((l) => l.code);
 export const DEFAULT_LOCALE: LocaleCode = 'en';
-
-const MESSAGES_DIR = path.join(process.cwd(), 'messages');
-
-/**
- * Walk `messages/` and return the codes of every dictionary present.
- * Adding `ar.json` ships Arabic to production with no source change.
- */
-export async function discoverLocales(): Promise<string[]> {
-  try {
-    const entries = await fs.readdir(MESSAGES_DIR);
-    return entries
-      .filter((f) => f.endsWith('.json'))
-      .map((f) => f.replace(/\.json$/, '').toLowerCase());
-  } catch {
-    return [...NATIVE_LOCALE_CODES];
-  }
-}
 
 export function getLocaleDescriptor(code: string): LocaleDescriptor {
   const normalized = code.toLowerCase();

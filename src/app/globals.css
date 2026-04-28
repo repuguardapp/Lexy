@@ -94,3 +94,25 @@
     hyphens: auto;
   }
 }
+
+/*
+ * Print stylesheet for the dashboard audit detail page. The user clicks
+ * "Save as PDF" → window.print() → the browser's native PDF export takes
+ * a clean, monochrome layout.
+ */
+@media print {
+  :root {
+    --background: 0 0% 100%;
+    --foreground: 0 0% 10%;
+    --muted: 0 0% 96%;
+    --muted-foreground: 0 0% 35%;
+    --border: 0 0% 80%;
+  }
+  header.sticky,
+  footer,
+  nav { display: none !important; }
+  main { max-width: none !important; padding: 0 !important; }
+  .container { max-width: none !important; padding: 0 !important; }
+  a { text-decoration: none; color: inherit; }
+  .break-inside-avoid { break-inside: avoid; page-break-inside: avoid; }
+}

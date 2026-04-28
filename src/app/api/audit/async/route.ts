@@ -1,9 +1,13 @@
 import { NextResponse } from 'next/server';
 import { z } from 'zod';
 import { runMultiPassAudit } from '@/lib/multi-pass-engine';
+import { clientIpFrom, rateLimit } from '@/lib/rate-limit';
 import { supabaseService } from '@/lib/supabase';
 import { withEphemeralDocument } from '@/lib/zero-knowledge';
 import type { FrameworkId } from '@/lib/legal-frameworks';
+
+const IP_LIMIT  = { windowMs: 60 * 60 * 1000, max: 5  };
+const ORG_LIMIT = { windowMs: 24 * 60 * 60 * 1000, max: 50 };
 
 /**
  * Asynchronous audit endpoint.
@@ -39,6 +43,17 @@ export async function POST(request: Request) {
     frameworks: form.get('frameworks'),
     targetLanguage: form.get('targetLanguage')
   });
+
+  const ip = clientIpFrom(request.headers);
+  const ipLimit  = rateLimit({ key: `audit:ip:${ip}`,                ...IP_LIMIT });
+  const orgLimit = rateLimit({ key: `audit:org:${meta.organizationId}`, ...ORG_LIMIT });
+  if (!ipLimit.ok || !orgLimit.ok) {
+    const offender = !ipLimit.ok ? ipLimit : orgLimit;
+    return NextResponse.json(
+      { error: 'rate_limited', resetAt: offender.resetAt },
+      { status: 429 }
+    );
+  }
 
   const buffer = Buffer.from(await file.arrayBuffer());
   const db = supabaseService();

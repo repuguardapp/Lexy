@@ -1,9 +1,17 @@
 import { NextResponse } from 'next/server';
 import { z } from 'zod';
 import { runMultiPassAudit } from '@/lib/multi-pass-engine';
+import { clientIpFrom, rateLimit } from '@/lib/rate-limit';
 import { supabaseService } from '@/lib/supabase';
 import { withEphemeralDocument } from '@/lib/zero-knowledge';
 import type { FrameworkId } from '@/lib/legal-frameworks';
+
+/**
+ * Cost protection. Tighter on IP (anonymous abuse) than on org (paying
+ * customer). Production should swap the in-memory store for Redis.
+ */
+const IP_LIMIT  = { windowMs: 60 * 60 * 1000, max: 5  };  //  5/h per IP
+const ORG_LIMIT = { windowMs: 24 * 60 * 60 * 1000, max: 50 }; // 50/day per org
 
 /**
  * Audit creation endpoint.
@@ -44,6 +52,24 @@ export async function POST(request: Request) {
     });
   } catch (err) {
     return NextResponse.json({ error: 'invalid_metadata', detail: String(err) }, { status: 400 });
+  }
+
+  // Rate limit: cheap-fail before we spend AI credits.
+  const ip = clientIpFrom(request.headers);
+  const ipLimit  = rateLimit({ key: `audit:ip:${ip}`,                ...IP_LIMIT });
+  const orgLimit = rateLimit({ key: `audit:org:${meta.organizationId}`, ...ORG_LIMIT });
+  if (!ipLimit.ok || !orgLimit.ok) {
+    const offender = !ipLimit.ok ? ipLimit : orgLimit;
+    return NextResponse.json(
+      { error: 'rate_limited', resetAt: offender.resetAt },
+      {
+        status: 429,
+        headers: {
+          'Retry-After': String(Math.ceil((offender.resetAt - Date.now()) / 1000)),
+          'X-RateLimit-Reset': String(Math.floor(offender.resetAt / 1000))
+        }
+      }
+    );
   }
 
   const buffer = Buffer.from(await file.arrayBuffer());

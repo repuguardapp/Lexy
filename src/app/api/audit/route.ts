@@ -1,9 +1,10 @@
 import { NextResponse } from 'next/server';
 import { z } from 'zod';
+import { extractText } from '@/lib/document-extractor';
 import { runMultiPassAudit } from '@/lib/multi-pass-engine';
 import { clientIpFrom, rateLimit } from '@/lib/rate-limit';
 import { supabaseService } from '@/lib/supabase';
-import { withEphemeralDocument } from '@/lib/zero-knowledge';
+import { hashDocument, wipeBuffer } from '@/lib/zero-knowledge';
 import type { FrameworkId } from '@/lib/legal-frameworks';
 
 /**
@@ -73,15 +74,31 @@ export async function POST(request: Request) {
   }
 
   const buffer = Buffer.from(await file.arrayBuffer());
+  const filename = file instanceof File ? file.name : undefined;
+  const mime = file.type || undefined;
 
-  // Multi-Pass + Zero-Knowledge: extract text, hash, audit, wipe.
-  const report = await withEphemeralDocument(buffer, async (text) => {
-    return runMultiPassAudit({
-      documentText: text,
+  let report;
+  try {
+    // 1. Extract text (PDF/DOCX/MD/TXT) — server-only, sensitive.
+    const extracted = await extractText(buffer, { filename, mime });
+    // 2. Run Multi-Pass over the extracted text.
+    report = await runMultiPassAudit({
+      documentText: extracted.text,
       frameworks: meta.frameworks,
       targetLanguage: meta.targetLanguage
     });
-  });
+    // Override hash from raw bytes (covers identical text from different
+    // file formats — same hash, same audit, deduped).
+    report.documentHash = hashDocument(extracted.text);
+  } catch (err) {
+    return NextResponse.json(
+      { error: 'extraction_or_audit_failed', detail: err instanceof Error ? err.message : String(err) },
+      { status: 422 }
+    );
+  } finally {
+    // Zero-Knowledge: wipe raw bytes whatever the path (success/failure).
+    wipeBuffer(buffer);
+  }
 
   // Persist only the AI-authored report (no document body, no PII).
   const db = supabaseService();

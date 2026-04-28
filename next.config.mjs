@@ -1,4 +1,5 @@
 import createNextIntlPlugin from 'next-intl/plugin';
+import { withSentryConfig } from '@sentry/nextjs';
 
 const withNextIntl = createNextIntlPlugin('./src/i18n/request.ts');
 
@@ -7,7 +8,9 @@ const nextConfig = {
   reactStrictMode: true,
   poweredByHeader: false,
   experimental: {
-    serverActions: { bodySizeLimit: '25mb' }
+    serverActions: { bodySizeLimit: '25mb' },
+    // Lets us use src/instrumentation.ts to boot Sentry per-runtime.
+    instrumentationHook: true
   },
   async headers() {
     return [
@@ -25,4 +28,17 @@ const nextConfig = {
   }
 };
 
-export default withNextIntl(nextConfig);
+const withIntl = withNextIntl(nextConfig);
+
+// Sentry's wrapper is a no-op without SENTRY_AUTH_TOKEN — safe to enable
+// in every environment. It uploads sourcemaps when the token is present.
+export default withSentryConfig(withIntl, {
+  silent: !process.env.SENTRY_AUTH_TOKEN,
+  org: process.env.SENTRY_ORG,
+  project: process.env.SENTRY_PROJECT,
+  authToken: process.env.SENTRY_AUTH_TOKEN,
+  // Tunneling routes Sentry traffic through our origin to dodge ad blockers.
+  tunnelRoute: '/monitoring',
+  hideSourceMaps: true,
+  disableLogger: true
+});

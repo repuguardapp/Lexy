@@ -1,9 +1,11 @@
 import { NextResponse } from 'next/server';
 import { z } from 'zod';
+import { extractText } from '@/lib/document-extractor';
+import { sendAuditCompletedEmail } from '@/lib/email';
 import { runMultiPassAudit } from '@/lib/multi-pass-engine';
 import { clientIpFrom, rateLimit } from '@/lib/rate-limit';
 import { supabaseService } from '@/lib/supabase';
-import { withEphemeralDocument } from '@/lib/zero-knowledge';
+import { hashDocument, wipeBuffer } from '@/lib/zero-knowledge';
 import type { FrameworkId } from '@/lib/legal-frameworks';
 
 const IP_LIMIT  = { windowMs: 60 * 60 * 1000, max: 5  };
@@ -56,6 +58,8 @@ export async function POST(request: Request) {
   }
 
   const buffer = Buffer.from(await file.arrayBuffer());
+  const filename = file instanceof File ? file.name : undefined;
+  const mime = file.type || undefined;
   const db = supabaseService();
 
   const { data: pending, error } = await db
@@ -74,17 +78,18 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: 'persistence_failed' }, { status: 500 });
   }
 
-  // Fire-and-forget; client polls.
+  // Fire-and-forget; client polls /api/audit/[id].
   void (async () => {
     try {
       await db.from('audits').update({ status: 'running' }).eq('id', pending.id);
-      const report = await withEphemeralDocument(buffer, async (text) =>
-        runMultiPassAudit({
-          documentText: text,
-          frameworks: meta.frameworks,
-          targetLanguage: meta.targetLanguage
-        })
-      );
+
+      const extracted = await extractText(buffer, { filename, mime });
+      const report = await runMultiPassAudit({
+        documentText: extracted.text,
+        frameworks: meta.frameworks,
+        targetLanguage: meta.targetLanguage
+      });
+      report.documentHash = hashDocument(extracted.text);
 
       await db
         .from('audits')
@@ -111,6 +116,14 @@ export async function POST(request: Request) {
           }))
         );
       }
+
+      // Best-effort completion notification — failures are silent.
+      void sendAuditCompletedEmail({
+        organizationId: meta.organizationId,
+        auditId: pending.id,
+        riskScore: report.riskScore,
+        findingsCount: report.findings.length
+      });
     } catch (err) {
       await db
         .from('audits')
@@ -119,6 +132,8 @@ export async function POST(request: Request) {
           error_message: err instanceof Error ? err.message : String(err)
         })
         .eq('id', pending.id);
+    } finally {
+      wipeBuffer(buffer);
     }
   })();
 

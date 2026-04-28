@@ -81,3 +81,22 @@ export async function createCheckoutSession(opts: CheckoutOptions) {
 
   return stripe().checkout.sessions.create(params);
 }
+
+export interface PortalOptions {
+  customerId: string;
+  origin: string;
+  locale: string;
+}
+
+/**
+ * Stripe Customer Portal session for self-serve subscription management
+ * (cancel, change plan, update card, download invoices). Returns the URL
+ * the client should redirect to.
+ */
+export async function createPortalSession(opts: PortalOptions) {
+  return stripe().billingPortal.sessions.create({
+    customer: opts.customerId,
+    return_url: `${opts.origin}/${opts.locale}/dashboard`,
+    locale: getLocaleDescriptor(opts.locale).stripeLocale as Stripe.BillingPortal.SessionCreateParams.Locale
+  });
+}

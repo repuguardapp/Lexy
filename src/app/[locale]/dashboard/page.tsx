@@ -2,12 +2,13 @@ import { ArrowUpRight, FileText, ShieldAlert } from 'lucide-react';
 import { unstable_setRequestLocale } from 'next-intl/server';
 import { redirect } from 'next/navigation';
 import { Link } from '@/i18n/navigation';
+import { ManageBillingButton } from '@/components/ManageBillingButton';
 import { SignOutButton } from '@/components/SignOutButton';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { FRAMEWORKS, type FrameworkId } from '@/lib/legal-frameworks';
-import { createSupabaseServerClient, getCurrentUser } from '@/lib/supabase-server';
+import { createSupabaseServerClient, getCurrentUser, organizationIdFromUser } from '@/lib/supabase-server';
 
 export const dynamic = 'force-dynamic';
 export const metadata = {
@@ -42,6 +43,9 @@ export default async function DashboardPage({
   if (!user) {
     redirect(`/${locale}/login?next=/${locale}/dashboard`);
   }
+  if (!organizationIdFromUser(user)) {
+    redirect(`/${locale}/onboarding`);
+  }
 
   const supabase = createSupabaseServerClient();
   const filterFramework = searchParams.framework;
@@ -74,6 +78,7 @@ export default async function DashboardPage({
           <Button asChild>
             <Link href="/audit">New audit</Link>
           </Button>
+          <ManageBillingButton />
           <SignOutButton />
         </div>
       </header>

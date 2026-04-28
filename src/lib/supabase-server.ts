@@ -51,3 +51,14 @@ export async function getCurrentUser() {
   if (error || !data?.user) return null;
   return data.user;
 }
+
+/**
+ * Returns the org id stamped in `app_metadata.organization_id`. The
+ * onboarding flow writes this once, then it travels in every JWT and
+ * powers Postgres RLS.
+ */
+export function organizationIdFromUser(user: { app_metadata: Record<string, unknown> | null }): string | null {
+  const meta = user.app_metadata ?? {};
+  const id = (meta as { organization_id?: unknown }).organization_id;
+  return typeof id === 'string' && id.length > 0 ? id : null;
+}

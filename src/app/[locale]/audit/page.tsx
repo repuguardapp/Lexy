@@ -2,14 +2,24 @@ import { ShieldCheck } from 'lucide-react';
 import { getTranslations, unstable_setRequestLocale } from 'next-intl/server';
 import { AuditForm } from '@/components/AuditForm';
 import { FRAMEWORKS } from '@/lib/legal-frameworks';
+import { getCurrentUser, organizationIdFromUser } from '@/lib/supabase-server';
+
+export const dynamic = 'force-dynamic';
 
 interface PageProps {
   params: { locale: string };
 }
 
+// Anonymous-friendly fallback so the audit page also works for the trial
+// flow on the marketing site. Real users get their stamped org id.
+const ANONYMOUS_ORG_ID = '00000000-0000-0000-0000-000000000000';
+
 export default async function AuditPage({ params: { locale } }: PageProps) {
   unstable_setRequestLocale(locale);
   const t = await getTranslations('audit');
+
+  const user = await getCurrentUser();
+  const orgId = (user && organizationIdFromUser(user)) ?? ANONYMOUS_ORG_ID;
 
   return (
     <div className="mx-auto grid max-w-2xl gap-10 py-16">
@@ -35,6 +45,7 @@ export default async function AuditPage({ params: { locale } }: PageProps) {
         }}
         frameworks={FRAMEWORKS.map((f) => ({ id: f.id, name: f.name }))}
         defaultLanguage={locale}
+        organizationId={orgId}
       />
     </div>
   );

@@ -31,6 +31,18 @@ export default async function ApiDocsPage({ params: { locale } }: PageProps) {
           Schemas are derived from the same Zod definitions that validate
           requests in production.
         </p>
+        <p className="text-sm text-muted-foreground">
+          Machine-readable spec:{' '}
+          <a
+            href="/api/openapi.json"
+            target="_blank"
+            rel="noopener"
+            className="font-mono underline underline-offset-2"
+          >
+            /api/openapi.json
+          </a>{' '}
+          (OpenAPI 3.1, importable in Postman, Insomnia, openapi-typescript, etc.)
+        </p>
       </header>
 
       <nav className="mt-10 grid grid-cols-2 gap-2 rounded-lg border bg-muted/40 p-4 text-sm md:grid-cols-3">

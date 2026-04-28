@@ -66,5 +66,39 @@
     "copyright": "© {year} LexyFlow. Tous droits réservés.",
     "privacy": "Confidentialité",
     "terms": "Conditions"
+  },
+  "report": {
+    "title": "Rapport d'audit de conformité",
+    "generatedOn": "Généré par LexyFlow le {date}.",
+    "riskScore": "Score de risque",
+    "executiveSummary": "Synthèse exécutive",
+    "findings": "Constatations",
+    "noFindings": "Aucune constatation — votre document est en règle par rapport aux référentiels sélectionnés.",
+    "recommendation": "Recommandation",
+    "evidence": "Preuve",
+    "savePdf": "Enregistrer en PDF",
+    "back": "Retour",
+    "language": "langue",
+    "footer": "Généré par LexyFlow · lexyflow.com · audit id {id}",
+    "severity": {
+      "critical": "critique",
+      "high": "élevé",
+      "medium": "moyen",
+      "low": "faible",
+      "info": "info"
+    }
+  },
+  "dashboard": {
+    "title": "Audits",
+    "signedInAs": "Connecté en tant que {email}.",
+    "newAudit": "Nouvel audit",
+    "filterAll": "Tous",
+    "openAudit": "Ouvrir",
+    "auditAt": "Audit · {date}",
+    "running": "En cours…",
+    "failed": "Échec",
+    "emptyTitle": "Aucun audit",
+    "emptyBody": "Déposez votre premier document pour voir les constatations ici.",
+    "emptyCta": "Lancer mon premier audit"
   }
 }

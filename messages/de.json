@@ -66,5 +66,39 @@
     "copyright": "© {year} LexyFlow. Alle Rechte vorbehalten.",
     "privacy": "Datenschutz",
     "terms": "AGB"
+  },
+  "report": {
+    "title": "Compliance-Auditbericht",
+    "generatedOn": "Erstellt von LexyFlow am {date}.",
+    "riskScore": "Risiko-Score",
+    "executiveSummary": "Zusammenfassung",
+    "findings": "Befunde",
+    "noFindings": "Keine Befunde — Ihr Dokument ist gegenüber den ausgewählten Rahmenwerken in Ordnung.",
+    "recommendation": "Empfehlung",
+    "evidence": "Beleg",
+    "savePdf": "Als PDF speichern",
+    "back": "Zurück",
+    "language": "Sprache",
+    "footer": "Erstellt von LexyFlow · lexyflow.com · audit id {id}",
+    "severity": {
+      "critical": "kritisch",
+      "high": "hoch",
+      "medium": "mittel",
+      "low": "gering",
+      "info": "Info"
+    }
+  },
+  "dashboard": {
+    "title": "Audits",
+    "signedInAs": "Angemeldet als {email}.",
+    "newAudit": "Neues Audit",
+    "filterAll": "Alle",
+    "openAudit": "Öffnen",
+    "auditAt": "Audit · {date}",
+    "running": "Läuft…",
+    "failed": "Fehlgeschlagen",
+    "emptyTitle": "Noch keine Audits",
+    "emptyBody": "Laden Sie Ihr erstes Dokument hoch, um Befunde zu sehen.",
+    "emptyCta": "Erstes Audit starten"
   }
 }

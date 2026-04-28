@@ -66,5 +66,39 @@
     "copyright": "© {year} LexyFlow. All rights reserved.",
     "privacy": "プライバシー",
     "terms": "利用規約"
+  },
+  "report": {
+    "title": "コンプライアンス監査レポート",
+    "generatedOn": "LexyFlow が {date} に生成。",
+    "riskScore": "リスクスコア",
+    "executiveSummary": "エグゼクティブサマリー",
+    "findings": "指摘事項",
+    "noFindings": "指摘事項はありません — 選択したフレームワークに対して問題は見つかりませんでした。",
+    "recommendation": "推奨事項",
+    "evidence": "根拠",
+    "savePdf": "PDF として保存",
+    "back": "戻る",
+    "language": "言語",
+    "footer": "LexyFlow により生成 · lexyflow.com · audit id {id}",
+    "severity": {
+      "critical": "重大",
+      "high": "高",
+      "medium": "中",
+      "low": "低",
+      "info": "情報"
+    }
+  },
+  "dashboard": {
+    "title": "監査一覧",
+    "signedInAs": "{email} としてログイン中。",
+    "newAudit": "新規監査",
+    "filterAll": "すべて",
+    "openAudit": "開く",
+    "auditAt": "監査 · {date}",
+    "running": "実行中…",
+    "failed": "失敗",
+    "emptyTitle": "監査がありません",
+    "emptyBody": "最初のドキュメントをアップロードすると、ここに指摘事項が表示されます。",
+    "emptyCta": "最初の監査を開始"
   }
 }

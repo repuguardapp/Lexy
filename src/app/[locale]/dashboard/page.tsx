@@ -1,5 +1,5 @@
 import { ArrowUpRight, FileText, ShieldAlert } from 'lucide-react';
-import { unstable_setRequestLocale } from 'next-intl/server';
+import { getTranslations, unstable_setRequestLocale } from 'next-intl/server';
 import { redirect } from 'next/navigation';
 import { Link } from '@/i18n/navigation';
 import { ManageBillingButton } from '@/components/ManageBillingButton';
@@ -38,6 +38,7 @@ export default async function DashboardPage({
   searchParams
 }: PageProps) {
   unstable_setRequestLocale(locale);
+  const t = await getTranslations('dashboard');
 
   const user = await getCurrentUser();
   if (!user) {
@@ -68,25 +69,31 @@ export default async function DashboardPage({
       <header className="mb-10 flex flex-wrap items-end justify-between gap-4">
         <div>
           <h1 className="text-balance text-3xl font-semibold tracking-tight md:text-4xl">
-            Audits
+            {t('title')}
           </h1>
           <p className="mt-1 text-pretty text-muted-foreground">
-            Signed in as <span className="font-medium text-foreground">{user.email}</span>.
+            {t.rich('signedInAs', {
+              email: () => <span className="font-medium text-foreground">{user.email}</span>
+            })}
           </p>
         </div>
         <div className="flex items-center gap-2">
           <Button asChild>
-            <Link href="/audit">New audit</Link>
+            <Link href="/audit">{t('newAudit')}</Link>
           </Button>
           <ManageBillingButton />
           <SignOutButton />
         </div>
       </header>
 
-      <FrameworkFilter active={filterFramework ?? null} locale={locale} />
+      <FrameworkFilter active={filterFramework ?? null} locale={locale} allLabel={t('filterAll')} />
 
       {rows.length === 0 ? (
-        <EmptyState />
+        <EmptyState
+          title={t('emptyTitle')}
+          body={t('emptyBody')}
+          cta={t('emptyCta')}
+        />
       ) : (
         <ul className="mt-8 grid gap-3">
           {rows.map((audit) => (
@@ -98,10 +105,15 @@ export default async function DashboardPage({
                       <div className="flex items-center gap-3">
                         <FileText className="h-4 w-4 text-muted-foreground" aria-hidden />
                         <CardTitle className="text-base font-medium">
-                          Audit · {new Date(audit.created_at).toLocaleString(locale)}
+                          {t('auditAt', { date: new Date(audit.created_at).toLocaleString(locale) })}
                         </CardTitle>
                       </div>
-                      <RiskBadge score={audit.risk_score} status={audit.status} />
+                      <RiskBadge
+                        score={audit.risk_score}
+                        status={audit.status}
+                        runningLabel={t('running')}
+                        failedLabel={t('failed')}
+                      />
                     </div>
                   </CardHeader>
                   <CardContent className="pb-4 pt-0">
@@ -117,7 +129,7 @@ export default async function DashboardPage({
                         </Badge>
                       ))}
                       <span className="ms-auto inline-flex items-center text-xs text-muted-foreground group-hover:text-foreground">
-                        Open
+                        {t('openAudit')}
                         <ArrowUpRight className="ms-1 h-3.5 w-3.5" />
                       </span>
                     </div>
@@ -132,9 +144,17 @@ export default async function DashboardPage({
   );
 }
 
-function FrameworkFilter({ active, locale }: { active: string | null; locale: string }) {
+function FrameworkFilter({
+  active,
+  locale,
+  allLabel
+}: {
+  active: string | null;
+  locale: string;
+  allLabel: string;
+}) {
   const items: Array<{ id: FrameworkId | 'all'; label: string }> = [
-    { id: 'all', label: 'All' },
+    { id: 'all', label: allLabel },
     ...FRAMEWORKS.map((f) => ({ id: f.id, label: f.name.split(' ')[0] ?? f.id }))
   ];
   return (
@@ -166,16 +186,20 @@ function FrameworkFilter({ active, locale }: { active: string | null; locale: st
 
 function RiskBadge({
   score,
-  status
+  status,
+  runningLabel,
+  failedLabel
 }: {
   score: number | null;
   status: AuditRow['status'];
+  runningLabel: string;
+  failedLabel: string;
 }) {
   if (status === 'pending' || status === 'running') {
-    return <Badge variant="secondary">Running…</Badge>;
+    return <Badge variant="secondary">{runningLabel}</Badge>;
   }
   if (status === 'failed') {
-    return <Badge variant="destructive">Failed</Badge>;
+    return <Badge variant="destructive">{failedLabel}</Badge>;
   }
   if (score === null) return null;
   if (score >= 70) return <Badge variant="destructive">{score}/100</Badge>;
@@ -183,16 +207,14 @@ function RiskBadge({
   return <Badge variant="outline">{score}/100</Badge>;
 }
 
-function EmptyState() {
+function EmptyState({ title, body, cta }: { title: string; body: string; cta: string }) {
   return (
     <div className="mt-12 rounded-lg border bg-muted/30 p-12 text-center">
       <ShieldAlert className="mx-auto h-8 w-8 text-muted-foreground" aria-hidden />
-      <h2 className="mt-3 text-lg font-medium">No audits yet</h2>
-      <p className="mt-1 text-sm text-muted-foreground">
-        Drop your first document to see findings here.
-      </p>
+      <h2 className="mt-3 text-lg font-medium">{title}</h2>
+      <p className="mt-1 text-sm text-muted-foreground">{body}</p>
       <Button asChild className="mt-5">
-        <Link href="/audit">Run my first audit</Link>
+        <Link href="/audit">{cta}</Link>
       </Button>
     </div>
   );

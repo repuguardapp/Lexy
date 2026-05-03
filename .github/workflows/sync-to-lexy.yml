@@ -33,13 +33,6 @@ jobs:
     timeout-minutes: 5
 
     steps:
-      - name: Guard — secret must be configured
-        if: ${{ secrets.LEXY_PUSH_TOKEN == '' }}
-        run: |
-          echo "::error::LEXY_PUSH_TOKEN secret is not set."
-          echo "::error::Add it under Settings → Secrets and variables → Actions."
-          exit 1
-
       - name: Checkout lexy/genesis
         uses: actions/checkout@v4
         with:
@@ -51,6 +44,11 @@ jobs:
         env:
           LEXY_PUSH_TOKEN: ${{ secrets.LEXY_PUSH_TOKEN }}
         run: |
+          if [ -z "$LEXY_PUSH_TOKEN" ]; then
+            echo "::error::LEXY_PUSH_TOKEN secret is not set."
+            echo "::error::Add it under Settings → Secrets and variables → Actions."
+            exit 1
+          fi
           git push \
             "https://x-access-token:${LEXY_PUSH_TOKEN}@github.com/repuguardapp/Lexy.git" \
             HEAD:main

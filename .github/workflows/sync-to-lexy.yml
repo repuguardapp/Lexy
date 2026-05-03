@@ -39,6 +39,10 @@ jobs:
           ref: lexy/genesis
           # Full history so the mirror push doesn't need shallow flag.
           fetch-depth: 0
+          # Critical: do NOT install the default GITHUB_TOKEN as a credential
+          # helper. We want to push with LEXY_PUSH_TOKEN below, not with
+          # github-actions[bot] (which has no access to repuguardapp/Lexy).
+          persist-credentials: false
 
       - name: Push to repuguardapp/Lexy:main
         env:

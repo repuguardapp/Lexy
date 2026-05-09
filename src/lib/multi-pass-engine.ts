@@ -38,7 +38,12 @@ const FindingSchema = z.object({
 const AuditPassSchema = z.object({
   summary: z.string(),
   riskScore: z.number().min(0).max(100),
-  findings: z.array(FindingSchema)
+  // Anthropic's tool-use schema-conformance is best-effort, not strict.
+  // For a fully compliant document Claude sometimes omits `findings`
+  // entirely instead of returning []. Default to an empty array so a
+  // clean audit lands as a successful "0 findings" report rather than
+  // a Zod validation failure.
+  findings: z.array(FindingSchema).default([])
 });
 
 type AuditPassResult = z.infer<typeof AuditPassSchema>;

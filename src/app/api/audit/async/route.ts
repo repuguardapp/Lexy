@@ -1,3 +1,4 @@
+import { randomUUID } from 'node:crypto';
 import { NextResponse } from 'next/server';
 import { waitUntil } from '@vercel/functions';
 import { z } from 'zod';
@@ -64,11 +65,16 @@ export async function POST(request: Request) {
   const mime = file.type || undefined;
   const db = supabaseService();
 
+  // Unique per-attempt placeholder so retries do not collide on the
+  // (organization_id, document_hash, language) unique index. Replaced
+  // by the real sha256 once the Multi-Pass engine has extracted text.
+  const placeholderHash = `pending:${randomUUID()}`;
+
   const { data: pending, error } = await db
     .from('audits')
     .insert({
       organization_id: meta.organizationId,
-      document_hash: 'pending',
+      document_hash: placeholderHash,
       frameworks: meta.frameworks,
       status: 'pending',
       language: meta.targetLanguage

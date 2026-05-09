@@ -268,3 +268,10 @@ create policy "members read own subscriptions" on public.subscriptions
 -- The webhook events table is service-role only.
 alter table public.stripe_webhook_events enable row level security;
 alter table public.rate_limits           enable row level security;
+
+-- 4. Anonymous demo organisation — used by the unauthenticated /audit
+--    flow on the marketing site. The placeholder UUID is hardcoded in
+--    src/app/[locale]/audit/page.tsx as ANONYMOUS_ORG_ID.
+insert into public.organizations (id, name, country, ui_locale, default_report_language)
+values ('00000000-0000-0000-0000-000000000000', 'Demo (anonymous)', 'FR', 'fr', 'fr')
+on conflict (id) do nothing;

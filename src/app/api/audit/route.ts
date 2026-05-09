@@ -118,7 +118,16 @@ export async function POST(request: Request) {
     .single();
 
   if (error || !audit) {
-    return NextResponse.json({ error: 'persistence_failed', detail: error?.message }, { status: 500 });
+    console.error('[audit] persistence_failed:', {
+      organizationId: meta.organizationId,
+      supabaseError: error
+        ? { code: error.code, message: error.message, details: error.details, hint: error.hint }
+        : 'no row returned'
+    });
+    return NextResponse.json(
+      { error: 'persistence_failed', detail: error?.message ?? 'no row' },
+      { status: 500 }
+    );
   }
 
   if (report.findings.length > 0) {

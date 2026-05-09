@@ -75,7 +75,19 @@ export async function POST(request: Request) {
     .single();
 
   if (error || !pending) {
-    return NextResponse.json({ error: 'persistence_failed' }, { status: 500 });
+    // Surface the underlying Supabase error in Vercel logs so we can
+    // diagnose persistence failures without re-running the audit.
+    console.error('[audit/async] persistence_failed:', {
+      organizationId: meta.organizationId,
+      frameworks: meta.frameworks,
+      supabaseError: error
+        ? { code: error.code, message: error.message, details: error.details, hint: error.hint }
+        : 'no row returned'
+    });
+    return NextResponse.json(
+      { error: 'persistence_failed', detail: error?.message ?? 'no row' },
+      { status: 500 }
+    );
   }
 
   // Fire-and-forget; client polls /api/audit/[id].

@@ -22,5 +22,9 @@ export function openai(): OpenAI {
   return openaiClient;
 }
 
-export const ANTHROPIC_MODEL = process.env.ANTHROPIC_MODEL ?? 'claude-3-5-sonnet-latest';
+// Sonnet 4.6 is the workhorse for the Multi-Pass audit: best speed/quality
+// ratio for long-context legal analysis. claude-3-5-sonnet was retired by
+// Anthropic; per the official migration guide, claude-sonnet-4-6 is the
+// drop-in replacement. Override via env if a future model warrants it.
+export const ANTHROPIC_MODEL = process.env.ANTHROPIC_MODEL ?? 'claude-sonnet-4-6';
 export const OPENAI_MODEL = process.env.OPENAI_MODEL ?? 'gpt-4o';

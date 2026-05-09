@@ -1,4 +1,5 @@
 import { NextResponse } from 'next/server';
+import { waitUntil } from '@vercel/functions';
 import { z } from 'zod';
 import { extractText } from '@/lib/document-extractor';
 import { sendAuditCompletedEmail } from '@/lib/email';
@@ -14,18 +15,19 @@ const ORG_LIMIT = { windowMs: 24 * 60 * 60 * 1000, max: 50 };
 /**
  * Asynchronous audit endpoint.
  *
- * For documents close to or over the synchronous 25 MB limit we accept the
- * upload, immediately return a `pending` audit row, and run the Multi-Pass
- * pipeline as a fire-and-forget background task. The client polls
- * `/api/audit/[id]` for completion. This pattern survives serverless
- * timeouts because the Function lifetime stays bounded by the response.
+ * Accepts the upload, returns 202 with a pending audit id immediately,
+ * and runs the Multi-Pass pipeline as a background task — kept alive on
+ * Vercel by `waitUntil()`. The client polls `/api/audit/[id]` for
+ * completion.
  *
- * Note: in a stricter deployment we would dispatch to a queue (QStash,
- * SQS, Supabase pg_cron). The inline pattern is sufficient for the MVP.
+ * Why waitUntil and not `void (async () => {})()`: a bare fire-and-forget
+ * after the response is sent gets killed by Vercel's serverless runtime
+ * the moment the response is flushed; the background work never runs and
+ * the audit row stays at status='pending' forever. waitUntil tells the
+ * runtime to keep the instance alive until the promise resolves.
  */
-
 export const runtime = 'nodejs';
-export const maxDuration = 60;
+export const maxDuration = 300;
 
 const Meta = z.object({
   organizationId: z.string().uuid(),
@@ -90,64 +92,73 @@ export async function POST(request: Request) {
     );
   }
 
-  // Fire-and-forget; client polls /api/audit/[id].
-  void (async () => {
-    try {
-      await db.from('audits').update({ status: 'running' }).eq('id', pending.id);
+  // Background work — waitUntil keeps the function instance alive on Vercel
+  // until the promise resolves, even after we send the 202 response.
+  waitUntil(
+    (async () => {
+      try {
+        await db.from('audits').update({ status: 'running' }).eq('id', pending.id);
 
-      const extracted = await extractText(buffer, { filename, mime });
-      const report = await runMultiPassAudit({
-        documentText: extracted.text,
-        frameworks: meta.frameworks,
-        targetLanguage: meta.targetLanguage
-      });
-      report.documentHash = hashDocument(extracted.text);
+        const extracted = await extractText(buffer, { filename, mime });
+        const report = await runMultiPassAudit({
+          documentText: extracted.text,
+          frameworks: meta.frameworks,
+          targetLanguage: meta.targetLanguage
+        });
+        report.documentHash = hashDocument(extracted.text);
 
-      await db
-        .from('audits')
-        .update({
-          status: 'completed',
-          document_hash: report.documentHash,
-          risk_score: report.riskScore,
-          summary: report.summary,
-          completed_at: report.generatedAt
-        })
-        .eq('id', pending.id);
+        const { error: updateErr } = await db
+          .from('audits')
+          .update({
+            status: 'completed',
+            document_hash: report.documentHash,
+            risk_score: report.riskScore,
+            summary: report.summary,
+            completed_at: report.generatedAt
+          })
+          .eq('id', pending.id);
+        if (updateErr) {
+          console.error('[audit/async] complete update failed:', updateErr);
+          throw new Error(`audit_complete_update_failed: ${updateErr.message}`);
+        }
 
-      if (report.findings.length > 0) {
-        await db.from('audit_findings').insert(
-          report.findings.map((f) => ({
-            audit_id: pending.id,
-            framework_id: f.framework,
-            citation: f.citation,
-            severity: f.severity,
-            title: f.title,
-            body: f.body,
-            recommendation: f.recommendation,
-            evidence: f.evidence
-          }))
-        );
+        if (report.findings.length > 0) {
+          const { error: findingsErr } = await db.from('audit_findings').insert(
+            report.findings.map((f) => ({
+              audit_id: pending.id,
+              framework_id: f.framework,
+              citation: f.citation,
+              severity: f.severity,
+              title: f.title,
+              body: f.body,
+              recommendation: f.recommendation,
+              evidence: f.evidence
+            }))
+          );
+          if (findingsErr) {
+            console.error('[audit/async] findings insert failed:', findingsErr);
+          }
+        }
+
+        // Best-effort completion notification — failures are silent.
+        void sendAuditCompletedEmail({
+          organizationId: meta.organizationId,
+          auditId: pending.id,
+          riskScore: report.riskScore,
+          findingsCount: report.findings.length
+        });
+      } catch (err) {
+        const message = err instanceof Error ? err.message : String(err);
+        console.error('[audit/async] background task failed:', { auditId: pending.id, error: message });
+        await db
+          .from('audits')
+          .update({ status: 'failed', error_message: message })
+          .eq('id', pending.id);
+      } finally {
+        wipeBuffer(buffer);
       }
-
-      // Best-effort completion notification — failures are silent.
-      void sendAuditCompletedEmail({
-        organizationId: meta.organizationId,
-        auditId: pending.id,
-        riskScore: report.riskScore,
-        findingsCount: report.findings.length
-      });
-    } catch (err) {
-      await db
-        .from('audits')
-        .update({
-          status: 'failed',
-          error_message: err instanceof Error ? err.message : String(err)
-        })
-        .eq('id', pending.id);
-    } finally {
-      wipeBuffer(buffer);
-    }
-  })();
+    })()
+  );
 
   return NextResponse.json({ auditId: pending.id, status: 'pending' }, { status: 202 });
 }

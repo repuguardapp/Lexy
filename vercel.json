@@ -6,7 +6,7 @@
   "regions": ["cdg1"],
   "functions": {
     "src/app/api/audit/route.ts":         { "maxDuration": 300, "memory": 1024 },
-    "src/app/api/audit/async/route.ts":   { "maxDuration": 60,  "memory": 1024 },
+    "src/app/api/audit/async/route.ts":   { "maxDuration": 300, "memory": 1024 },
     "src/app/api/checkout/route.ts":      { "maxDuration": 30,  "memory": 512 },
     "src/app/api/cron/purge/route.ts":    { "maxDuration": 60,  "memory": 512 }
   },

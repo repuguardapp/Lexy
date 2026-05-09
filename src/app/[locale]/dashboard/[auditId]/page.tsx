@@ -29,6 +29,7 @@ interface FindingRow {
 
 interface AuditDetailRow {
   id: string;
+  organization_id: string;
   document_hash: string | null;
   frameworks: string[];
   status: string;
@@ -39,23 +40,37 @@ interface AuditDetailRow {
   completed_at: string | null;
 }
 
+// The anonymous-org placeholder is what /audit (and the embed widget)
+// stamps onto unauth runs — see src/app/[locale]/audit/page.tsx. Reports
+// produced under this org are intentionally viewable by anyone holding
+// the audit UUID: it is the equivalent of a Dropbox share link, and the
+// UUID is unguessable. Auth is only enforced for reports owned by a
+// real (paying) organization.
+const ANONYMOUS_ORG_ID = '00000000-0000-0000-0000-000000000000';
+
 export default async function AuditDetailPage({ params }: PageProps) {
   unstable_setRequestLocale(params.locale);
   const t = await getTranslations('report');
-
-  const user = await getCurrentUser();
-  if (!user) redirect(`/${params.locale}/login?next=/${params.locale}/dashboard/${params.auditId}`);
 
   const supabase = createSupabaseServerClient();
 
   const { data: audit } = await supabase
     .from('audits')
-    .select('id,document_hash,frameworks,status,risk_score,summary,language,created_at,completed_at')
+    .select('id,organization_id,document_hash,frameworks,status,risk_score,summary,language,created_at,completed_at')
     .eq('id', params.auditId)
     .maybeSingle();
 
   if (!audit) notFound();
   const a = audit as AuditDetailRow;
+
+  // Auth gate: anonymous-org reports are public-by-UUID; everything
+  // else requires a logged-in user. We deliberately do not check that
+  // the user owns the audit here — that's enforced by RLS at the
+  // Supabase layer when we read the row above.
+  if (a.organization_id !== ANONYMOUS_ORG_ID) {
+    const user = await getCurrentUser();
+    if (!user) redirect(`/${params.locale}/login?next=/${params.locale}/dashboard/${params.auditId}`);
+  }
 
   const { data: findings } = await supabase
     .from('audit_findings')

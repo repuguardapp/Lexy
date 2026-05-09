@@ -74,30 +74,61 @@ function buildAuditSystemPrompt(frameworks: FrameworkId[]): string {
   }
   lines.push(
     '',
-    'Output a single JSON object matching this schema (no prose, no markdown):',
-    '{',
-    '  "summary":     string,                // executive summary, 3-5 sentences',
-    '  "riskScore":   number,                // 0 (compliant) to 100 (severe)',
-    '  "findings":    Finding[]',
-    '}',
-    'Finding = {',
-    '  "framework":     string,              // one of the in-scope IDs',
-    '  "citation":      string,              // e.g. "GDPR Art. 13(2)(a)"',
-    '  "severity":      "critical"|"high"|"medium"|"low"|"info",',
-    '  "title":         string,              // <= 90 chars',
-    '  "body":          string,              // 2-4 paragraphs of analysis',
-    '  "recommendation":string,              // remediation, actionable',
-    '  "evidence":      string               // verbatim quote from the doc'
-    , '}',
+    'Submit your findings via the submit_audit tool. The tool input schema',
+    'is the structured form of your audit; the tool is the only way to',
+    'return findings.',
     '',
     'Rules:',
     '- Write in English. Translation is performed in a later pass.',
     '- Never invent quotes. Every "evidence" must be verbatim from the doc.',
-    '- Citations stay in the original language of the regulation.',
-    '- Return valid JSON only.'
+    '- Citations stay in the original language of the regulation.'
   );
   return lines.join('\n');
 }
+
+// Tool-use (a.k.a. function calling) is how we force Anthropic to return
+// a strict, schema-conformant object. Earlier we asked the model to emit
+// raw JSON in a text block — Sonnet 4.6 frequently wrapped it in ```json
+// fences, breaking JSON.parse(). Tool use eliminates the parsing surface:
+// the API itself validates the input matches input_schema.
+const SUBMIT_AUDIT_TOOL = {
+  name: 'submit_audit',
+  description:
+    'Submit the compliance audit. Call this exactly once with the full audit payload.',
+  input_schema: {
+    type: 'object' as const,
+    properties: {
+      summary: {
+        type: 'string',
+        description: 'Executive summary, 3-5 sentences.'
+      },
+      riskScore: {
+        type: 'number',
+        description: '0 (fully compliant) to 100 (severe systemic risk).'
+      },
+      findings: {
+        type: 'array',
+        items: {
+          type: 'object',
+          properties: {
+            framework: { type: 'string', description: 'Framework ID, e.g. "gdpr".' },
+            citation: { type: 'string', description: 'e.g. "GDPR Art. 13(2)(a)".' },
+            severity: {
+              type: 'string',
+              enum: ['critical', 'high', 'medium', 'low', 'info']
+            },
+            title: { type: 'string', description: 'Headline of the issue, ≤ 90 chars.' },
+            body: { type: 'string', description: '2-4 paragraphs of analysis.' },
+            recommendation: { type: 'string', description: 'Concrete remediation steps.' },
+            evidence: { type: 'string', description: 'Verbatim quote from the document.' }
+          },
+          required: ['framework', 'citation', 'severity', 'title', 'body', 'recommendation', 'evidence']
+        }
+      }
+    },
+    required: ['summary', 'riskScore', 'findings']
+  }
+};
 
 export async function legalAudit(input: AuditInput): Promise<AuditPassResult> {
   const system = buildAuditSystemPrompt(input.frameworks);
@@ -106,17 +137,22 @@ export async function legalAudit(input: AuditInput): Promise<AuditPassResult> {
     max_tokens: 4096,
     temperature: 0,
     system,
+    tools: [SUBMIT_AUDIT_TOOL],
+    tool_choice: { type: 'tool', name: 'submit_audit' },
     messages: [{ role: 'user', content: input.documentText }]
   });
 
-  const textBlock = message.content.find((c) => c.type === 'text');
-  if (!textBlock || textBlock.type !== 'text') {
-    throw new Error('Anthropic returned no text content for audit pass');
+  const toolUse = message.content.find((c) => c.type === 'tool_use');
+  if (!toolUse || toolUse.type !== 'tool_use') {
+    throw new Error('Anthropic did not call submit_audit — stop_reason=' + message.stop_reason);
   }
 
-  const parsed = AuditPassSchema.safeParse(JSON.parse(textBlock.text));
+  // toolUse.input is already a parsed object (Anthropic guarantees JSON
+  // schema conformance). We still run it through Zod for runtime safety
+  // and to produce the strongly-typed AuditPassResult.
+  const parsed = AuditPassSchema.safeParse(toolUse.input);
   if (!parsed.success) {
-    throw new Error(`Audit pass returned malformed JSON: ${parsed.error.message}`);
+    throw new Error(`Audit tool input failed Zod validation: ${parsed.error.message}`);
   }
   return parsed.data;
 }

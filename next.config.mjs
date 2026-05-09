@@ -10,7 +10,11 @@ const nextConfig = {
   experimental: {
     serverActions: { bodySizeLimit: '25mb' },
     // Lets us use src/instrumentation.ts to boot Sentry per-runtime.
-    instrumentationHook: true
+    instrumentationHook: true,
+    // Keep these out of the webpack bundle — they ship Node-only code that
+    // the serverless cold-start cannot evaluate (e.g. pdfjs-dist references
+    // DOMMatrix at module load). Loaded via require() at runtime instead.
+    serverComponentsExternalPackages: ['pdf-parse', 'pdfjs-dist', 'mammoth']
   },
   async headers() {
     return [

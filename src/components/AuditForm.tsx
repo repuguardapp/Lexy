@@ -38,7 +38,12 @@ type View =
 type AuditStatus = 'pending' | 'running' | 'completed' | 'failed';
 
 const POLL_INTERVAL_MS = 2_000;
-const POLL_TIMEOUT_MS  = 5 * 60 * 1_000;
+// 10 min covers cold start + extraction + Multi-Pass + persistence even
+// for the largest documents we accept. We also re-poll on
+// `visibilitychange` because iOS Safari throttles background tabs to
+// roughly one timer fire per minute, which used to make a finished
+// audit look like a timeout when the user switched apps mid-run.
+const POLL_TIMEOUT_MS  = 10 * 60 * 1_000;
 
 /**
  * Audit form + async progress UI.
@@ -175,9 +180,20 @@ function ProgressPanel({ view }: { view: Extract<View, { phase: 'tracking' | 'co
 
     const t = setInterval(poll, POLL_INTERVAL_MS);
     void poll();
+
+    // iOS Safari (and most mobile browsers) throttle setInterval down to
+    // one fire per minute on background tabs. Without this listener, an
+    // audit that finished while the tab was hidden would not be
+    // discovered until the user manually refreshed.
+    const onVisible = () => {
+      if (document.visibilityState === 'visible') void poll();
+    };
+    document.addEventListener('visibilitychange', onVisible);
+
     return () => {
       cancelled = true;
       clearInterval(t);
+      document.removeEventListener('visibilitychange', onVisible);
     };
   }, [current.phase === 'tracking' ? current.auditId : null]); // eslint-disable-line react-hooks/exhaustive-deps
 

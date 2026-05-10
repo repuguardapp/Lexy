@@ -163,104 +163,156 @@ export async function POST(request: Request) {
     }
   };
 
-  // ---- 4. Extract text ----------------------------------------------
+  // ---- 4. Slow path — wrapped in a streaming response --------------
+  // iOS Safari (and a few mobile carriers' transparent proxies) abort
+  // HTTP fetches that don't transmit any bytes for ~60s. The audit
+  // pipeline can take 90-120s on a non-trivial document, so a naive
+  // `await runMultiPass(); return NextResponse.json(...)` reaches the
+  // browser as a "Load failed" TypeError before our reply lands.
+  //
+  // Fix: stream a ReadableStream that emits a whitespace heartbeat
+  // every 10s. The bytes keep the connection technically active; the
+  // final chunk is the real JSON envelope. JSON.parse() ignores
+  // leading whitespace, so the body parses cleanly on the client.
+  //
+  // Status code is always 200 for the streamed path — the success vs
+  // failure discrimination happens via the `ok` field in the final
+  // chunk. The fast-path checks above (rate limit, credits, etc.)
+  // still return proper 4xx codes immediately.
   const buffer = Buffer.from(await file.arrayBuffer());
   const filename = file instanceof File ? file.name : undefined;
   const mime = file.type || undefined;
 
-  let extracted;
-  try {
-    extracted = await extractText(buffer, { filename, mime });
-    log('extracted', { type: extracted.type, charCount: extracted.charCount, redactionCount: extracted.redactionCount });
-  } catch (err) {
-    wipeBuffer(buffer);
-    await refundIfNeeded('extraction_failed');
-    return errorJson('extraction_failed', err instanceof Error ? err.message : String(err), 422);
-  }
+  const stream = new ReadableStream<Uint8Array>({
+    async start(controller) {
+      const enc = new TextEncoder();
+      const heartbeat = setInterval(() => {
+        try {
+          // Plain space — valid JSON whitespace, gets ignored by the
+          // parser. Comments would also work but are non-standard.
+          controller.enqueue(enc.encode(' '));
+        } catch {
+          // controller is closed — nothing to do.
+        }
+      }, 10_000);
 
-  // ---- 5. Run Multi-Pass --------------------------------------------
-  let report;
-  try {
-    log('multipass_start');
-    report = await runMultiPassAudit({
-      documentText: extracted.text,
-      frameworks: meta.frameworks,
-      targetLanguage: meta.targetLanguage
-    });
-    report.documentHash = hashDocument(extracted.text);
-    log('multipass_done', { findings: report.findings.length, riskScore: report.riskScore });
-  } catch (err) {
-    wipeBuffer(buffer);
-    const { code, detail } = classifyAiError(err);
-    log('multipass_failed', { code, detail });
-    await refundIfNeeded(code);
-    return errorJson(code, detail, 502);
-  } finally {
-    // Wipe as early as we can — once Multi-Pass has consumed the text
-    // we never need the raw bytes again.
-    wipeBuffer(buffer);
-  }
+      const finish = (payload: Record<string, unknown>) => {
+        clearInterval(heartbeat);
+        try {
+          controller.enqueue(enc.encode(JSON.stringify(payload)));
+        } finally {
+          controller.close();
+        }
+      };
 
-  // ---- 6. Persist ---------------------------------------------------
-  const { data: audit, error: insertErr } = await db
-    .from('audits')
-    .insert({
-      organization_id: meta.organizationId,
-      document_hash: report.documentHash,
-      frameworks: report.frameworks,
-      status: 'completed',
-      risk_score: report.riskScore,
-      summary: report.summary,
-      language: report.language,
-      completed_at: report.generatedAt
-    })
-    .select('id')
-    .single();
+      // Extract
+      let extracted;
+      try {
+        extracted = await extractText(buffer, { filename, mime });
+        log('extracted', { type: extracted.type, charCount: extracted.charCount, redactionCount: extracted.redactionCount });
+      } catch (err) {
+        wipeBuffer(buffer);
+        await refundIfNeeded('extraction_failed');
+        finish({ ok: false, error: 'extraction_failed', detail: err instanceof Error ? err.message : String(err) });
+        return;
+      }
 
-  if (insertErr || !audit) {
-    log('supabase_write_failed', {
-      code: insertErr?.code,
-      message: insertErr?.message,
-      hint: insertErr?.hint
-    });
-    await refundIfNeeded('supabase_write_failed');
-    return errorJson(
-      'supabase_write_failed',
-      insertErr?.message ?? 'audit row insert returned no id',
-      500
-    );
-  }
-  log('audit_persisted', { auditId: audit.id });
+      // Multi-Pass
+      let report;
+      try {
+        log('multipass_start');
+        report = await runMultiPassAudit({
+          documentText: extracted.text,
+          frameworks: meta.frameworks,
+          targetLanguage: meta.targetLanguage
+        });
+        report.documentHash = hashDocument(extracted.text);
+        log('multipass_done', { findings: report.findings.length, riskScore: report.riskScore });
+      } catch (err) {
+        wipeBuffer(buffer);
+        const { code, detail } = classifyAiError(err);
+        log('multipass_failed', { code, detail });
+        await refundIfNeeded(code);
+        finish({ ok: false, error: code, detail });
+        return;
+      }
 
-  if (report.findings.length > 0) {
-    const { error: findingsErr } = await db.from('audit_findings').insert(
-      report.findings.map((f) => ({
-        audit_id: audit.id,
-        framework_id: f.framework,
-        citation: f.citation,
-        severity: f.severity,
-        title: f.title,
-        body: f.body,
-        recommendation: f.recommendation,
-        evidence: f.evidence
-      }))
-    );
-    if (findingsErr) {
-      // The audit row IS persisted at this point — we don't fail the
-      // whole request just because the findings table errored. The
-      // dashboard will render the audit with zero findings and the log
-      // tells us the row to repair.
-      log('findings_insert_failed', { error: findingsErr.message, auditId: audit.id });
-    } else {
-      log('findings_persisted', { count: report.findings.length });
+      // Wipe as early as we can — Multi-Pass has consumed the text.
+      wipeBuffer(buffer);
+
+      // Persist audit row
+      const { data: audit, error: insertErr } = await db
+        .from('audits')
+        .insert({
+          organization_id: meta.organizationId,
+          document_hash: report.documentHash,
+          frameworks: report.frameworks,
+          status: 'completed',
+          risk_score: report.riskScore,
+          summary: report.summary,
+          language: report.language,
+          completed_at: report.generatedAt
+        })
+        .select('id')
+        .single();
+
+      if (insertErr || !audit) {
+        log('supabase_write_failed', {
+          code: insertErr?.code,
+          message: insertErr?.message,
+          hint: insertErr?.hint
+        });
+        await refundIfNeeded('supabase_write_failed');
+        finish({
+          ok: false,
+          error: 'supabase_write_failed',
+          detail: insertErr?.message ?? 'audit row insert returned no id'
+        });
+        return;
+      }
+      log('audit_persisted', { auditId: audit.id });
+
+      // Persist findings (best-effort — audit row already saved)
+      if (report.findings.length > 0) {
+        const { error: findingsErr } = await db.from('audit_findings').insert(
+          report.findings.map((f) => ({
+            audit_id: audit.id,
+            framework_id: f.framework,
+            citation: f.citation,
+            severity: f.severity,
+            title: f.title,
+            body: f.body,
+            recommendation: f.recommendation,
+            evidence: f.evidence
+          }))
+        );
+        if (findingsErr) {
+          log('findings_insert_failed', { error: findingsErr.message, auditId: audit.id });
+        } else {
+          log('findings_persisted', { count: report.findings.length });
+        }
+      }
+
+      log('done', { auditId: audit.id });
+      finish({
+        ok: true,
+        auditId: audit.id,
+        riskScore: report.riskScore,
+        findingsCount: report.findings.length,
+        redirect: `/dashboard/${audit.id}`
+      });
     }
-  }
+  });
 
-  log('done', { auditId: audit.id });
-  return NextResponse.json({
-    auditId: audit.id,
-    riskScore: report.riskScore,
-    findingsCount: report.findings.length,
-    redirect: `/dashboard/${audit.id}`
+  return new Response(stream, {
+    status: 200,
+    headers: {
+      'Content-Type': 'application/json; charset=utf-8',
+      // Disable any in-path buffering: we need the heartbeat bytes to
+      // hit the wire immediately, not get pooled into a 64 KB chunk
+      // by an upstream proxy.
+      'Cache-Control': 'no-store',
+      'X-Accel-Buffering': 'no'
+    }
   });
 }

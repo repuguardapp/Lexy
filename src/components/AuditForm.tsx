@@ -110,19 +110,31 @@ export function AuditForm({ labels, frameworks, defaultLanguage, organizationId 
         return;
       }
 
+      // Fast-path errors (rate limit, validation, etc.) come through
+      // with proper HTTP status codes and a non-streamed JSON body.
       if (!res.ok) {
         const body = (await res.json().catch(() => ({}))) as { error?: string; detail?: string };
-        // Surface the precise server-side code AND its detail to the
-        // user. The CEO asked explicitly for "Erreur de clé Anthropic"
-        // / "Échec écriture Supabase" — this is exactly the wire shape
-        // /api/audit emits.
         const message = body.detail ? `${body.error ?? 'audit_failed'}: ${body.detail}` : body.error ?? `audit_failed_${res.status}`;
         throw new Error(message);
       }
 
-      const body = (await res.json()) as { auditId: string; redirect: string };
-      // Straight to the report — no intermediate "audit complete" card.
-      window.location.assign(body.redirect);
+      // Slow-path: 200 with a streamed envelope. The body has leading
+      // whitespace heartbeats — JSON.parse ignores them, so a plain
+      // .json() call works. The `ok` field discriminates success from
+      // a server-side failure that finished mid-stream.
+      const body = (await res.json()) as
+        | { ok: true; auditId: string; redirect: string }
+        | { ok: false; error: string; detail?: string };
+
+      if (body.ok) {
+        // Straight to the report — no intermediate "audit complete" card.
+        window.location.assign(body.redirect);
+        return;
+      }
+
+      // ok === false: extract the structured server error.
+      const message = body.detail ? `${body.error}: ${body.detail}` : body.error;
+      throw new Error(message);
     } catch (err) {
       setView({ phase: 'failed', message: err instanceof Error ? err.message : String(err) });
     }
@@ -180,6 +192,7 @@ export function AuditForm({ labels, frameworks, defaultLanguage, organizationId 
 function RunningCard({ labels }: { labels: AuditFormLabels }) {
   const phases = labels.processing.phases;
   const [phaseIndex, setPhaseIndex] = useState(0);
+  const [progress, setProgress] = useState(0);
 
   // Rotate phrases every PHASE_INTERVAL_MS for a feeling of progress.
   // The rotation is purely cosmetic — there is no server pulse driving
@@ -191,6 +204,18 @@ function RunningCard({ labels }: { labels: AuditFormLabels }) {
     }, PHASE_INTERVAL_MS);
     return () => clearInterval(t);
   }, [phases.length]);
+
+  // Animate the bar from 0% on mount up to ~92% over the expected
+  // audit duration (90s). After that we plateau and let the pulse
+  // animation carry the eye until the response lands. We don't reach
+  // 100% because that would feel "done" before the redirect fires.
+  useEffect(() => {
+    // Defer the first setState so the browser sees the 0% value
+    // commit, THEN transitions to the target. Without this the
+    // CSS `transition` doesn't kick in (start = end).
+    const start = setTimeout(() => setProgress(92), 50);
+    return () => clearTimeout(start);
+  }, []);
 
   const subPhase = phases[phaseIndex] ?? '';
 
@@ -208,7 +233,16 @@ function RunningCard({ labels }: { labels: AuditFormLabels }) {
         {subPhase}
       </div>
       <div className="h-1.5 overflow-hidden rounded-full bg-muted">
-        <div className="h-full w-2/3 animate-pulse bg-foreground" />
+        <div
+          className={cn(
+            'h-full bg-foreground ease-out',
+            progress >= 92 ? 'animate-pulse' : ''
+          )}
+          style={{
+            width: `${progress}%`,
+            transition: 'width 90s linear'
+          }}
+        />
       </div>
     </div>
   );

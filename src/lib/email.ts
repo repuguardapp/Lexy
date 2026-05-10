@@ -39,36 +39,41 @@ export interface AuditCompletedEmailArgs {
 }
 
 export async function sendAuditCompletedEmail(args: AuditCompletedEmailArgs): Promise<void> {
-  const r = resend();
-  if (!r) return; // Email disabled in this env — silently skip.
-
-  const admin = supabaseService();
-
-  // Look up the org owner's email + UI locale. Cheap, single query.
-  const { data: org } = await admin
-    .from('organizations')
-    .select('id,name,ui_locale')
-    .eq('id', args.organizationId)
-    .maybeSingle();
-  if (!org) return;
-
-  // Find members of the org via auth.users + their app_metadata. For MVP
-  // we send to all members; production should respect notification prefs.
-  const { data: members } = await admin.auth.admin.listUsers({ page: 1, perPage: 50 });
-
-  const recipients = (members?.users ?? [])
-    .filter((u) => (u.app_metadata as { organization_id?: string } | null)?.organization_id === args.organizationId)
-    .map((u) => u.email)
-    .filter((e): e is string => Boolean(e));
-
-  if (recipients.length === 0) return;
-
-  const url = `${APP_URL()}/dashboard/${args.auditId}`;
-  const severity = severityFor(args.riskScore);
-  const strings = emailStringsFor(org.ui_locale);
-  const subject = strings.subject(severity, args.riskScore);
-
+  // Wrap the entire body in a try/catch so this best-effort notification
+  // can never produce an unhandled promise rejection — the audit
+  // pipeline calls us with `void` and a stray rejection here used to
+  // bubble up to the waitUntil runtime as a spurious error log even
+  // though the audit itself had already completed successfully.
   try {
+    const r = resend();
+    if (!r) return; // Email disabled in this env — silently skip.
+
+    const admin = supabaseService();
+
+    // Look up the org owner's email + UI locale. Cheap, single query.
+    const { data: org } = await admin
+      .from('organizations')
+      .select('id,name,ui_locale')
+      .eq('id', args.organizationId)
+      .maybeSingle();
+    if (!org) return;
+
+    // Find members of the org via auth.users + their app_metadata. For MVP
+    // we send to all members; production should respect notification prefs.
+    const { data: members } = await admin.auth.admin.listUsers({ page: 1, perPage: 50 });
+
+    const recipients = (members?.users ?? [])
+      .filter((u) => (u.app_metadata as { organization_id?: string } | null)?.organization_id === args.organizationId)
+      .map((u) => u.email)
+      .filter((e): e is string => Boolean(e));
+
+    if (recipients.length === 0) return;
+
+    const url = `${APP_URL()}/dashboard/${args.auditId}`;
+    const severity = severityFor(args.riskScore);
+    const strings = emailStringsFor(org.ui_locale);
+    const subject = strings.subject(severity, args.riskScore);
+
     await r.emails.send({
       from: FROM,
       to: recipients,
@@ -135,14 +140,14 @@ const MAGIC_BODY: Record<string, { lead: string; cta: string; safety: string }> 
 };
 
 export async function sendMagicLinkEmail(args: MagicLinkEmailArgs): Promise<void> {
-  const r = resend();
-  if (!r) return;
-
-  const locale = (args.locale ?? 'en').toLowerCase();
-  const subject = MAGIC_SUBJECT[locale] ?? MAGIC_SUBJECT.en!;
-  const body = MAGIC_BODY[locale] ?? MAGIC_BODY.en!;
-
   try {
+    const r = resend();
+    if (!r) return;
+
+    const locale = (args.locale ?? 'en').toLowerCase();
+    const subject = MAGIC_SUBJECT[locale] ?? MAGIC_SUBJECT.en!;
+    const body = MAGIC_BODY[locale] ?? MAGIC_BODY.en!;
+
     await r.emails.send({
       from: FROM,
       to: args.to,

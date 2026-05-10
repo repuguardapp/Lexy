@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server';
 import type Stripe from 'stripe';
-import { stripe, type PlanId } from '@/lib/stripe';
+import { PLAN_CREDITS, stripe, type PlanId } from '@/lib/stripe';
 import { supabaseService } from '@/lib/supabase';
 
 /**
@@ -90,9 +90,17 @@ export async function POST(request: Request) {
         await handleSubscriptionDeleted(event.data.object as Stripe.Subscription);
         break;
       case 'invoice.paid':
+        // Top up the org's audit credits for this billing cycle. The
+        // outer stripe_webhook_events insert (above) is the idempotency
+        // guard — Stripe retries of the same event_id are rejected
+        // before reaching this handler, so we cannot double-credit a
+        // single invoice. Subsequent monthly renewals carry a different
+        // event_id and credit the org as expected.
+        await handleInvoicePaid(event.data.object as Stripe.Invoice);
+        break;
       case 'invoice.payment_failed':
         // Status reconciliation lives in the subscription.* events; the
-        // invoice.* events are recorded as audit trail but no special
+        // payment_failed event is recorded as audit trail but no special
         // handling beyond the idempotent insert above.
         break;
       default:
@@ -169,4 +177,61 @@ async function handleSubscriptionDeleted(sub: Stripe.Subscription) {
       updated_at: new Date().toISOString()
     })
     .eq('stripe_subscription_id', sub.id);
+}
+
+/**
+ * Top up the org's audit credits when an invoice is paid. Both the
+ * first invoice (right after checkout) and every monthly renewal land
+ * here. The function bails out cleanly on:
+ *   - one-off invoices (no `subscription` field)
+ *   - subscriptions whose price doesn't map to a known plan
+ *   - subscriptions missing the `organization_id` metadata stamp
+ * so a misconfiguration causes a quiet skip instead of crediting the
+ * wrong account.
+ */
+async function handleInvoicePaid(invoice: Stripe.Invoice) {
+  const subId = typeof invoice.subscription === 'string'
+    ? invoice.subscription
+    : invoice.subscription?.id;
+  if (!subId) return;
+
+  // Look up the subscription server-side rather than trusting the
+  // (sparse) invoice.lines payload — gives us the canonical plan and
+  // organization_id metadata in one round trip.
+  const sub = await stripe().subscriptions.retrieve(subId);
+  const orgId = sub.metadata?.organization_id;
+  if (!orgId) {
+    console.error('[stripe-webhook] invoice.paid without org metadata', {
+      subscriptionId: sub.id,
+      invoiceId: invoice.id
+    });
+    return;
+  }
+
+  const priceId = sub.items.data[0]?.price.id;
+  const plan = planForPriceId(priceId);
+  if (!plan) {
+    console.error('[stripe-webhook] invoice.paid for unknown plan price', {
+      subscriptionId: sub.id,
+      priceId
+    });
+    return;
+  }
+
+  const amount = PLAN_CREDITS[plan];
+  const { error: rpcErr } = await supabaseService().rpc('add_audit_credits', {
+    p_org_id: orgId,
+    p_amount: amount
+  });
+  if (rpcErr) {
+    console.error('[stripe-webhook] add_audit_credits failed', {
+      subscriptionId: sub.id,
+      orgId,
+      plan,
+      amount,
+      error: rpcErr.message
+    });
+    throw new Error(`add_audit_credits_failed: ${rpcErr.message}`);
+  }
+  console.log('[stripe-webhook] credited', { orgId, plan, amount, invoiceId: invoice.id });
 }

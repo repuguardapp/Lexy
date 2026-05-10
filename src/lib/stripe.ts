@@ -20,6 +20,18 @@ const PRICE_ENV: Record<PlanId, string> = {
   enterprise: 'STRIPE_PRICE_ENTERPRISE'
 };
 
+/**
+ * Audit credits granted per monthly billing cycle, per plan.
+ * The Stripe webhook calls add_audit_credits(org, PLAN_CREDITS[plan])
+ * on every `invoice.paid` event, so renewals top up automatically and
+ * a credit balance never silently drains to zero on an active sub.
+ */
+export const PLAN_CREDITS: Record<PlanId, number> = {
+  starter:    10,
+  pro:        100,
+  enterprise: 1000
+};
+
 export function priceIdFor(plan: PlanId): string {
   const envKey = PRICE_ENV[plan];
   const id = process.env[envKey];

@@ -3,6 +3,7 @@ import { CheckoutButton } from '@/components/CheckoutButton';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { getLocaleDescriptor } from '@/i18n/locales';
 import { buildHreflangAlternates } from '@/lib/hreflang';
+import { getCurrentUser, organizationIdFromUser } from '@/lib/supabase-server';
 
 interface PageProps {
   params: { locale: string };
@@ -21,7 +22,14 @@ const PLANS = ['starter', 'pro', 'enterprise'] as const;
 export default async function PricingPage({ params: { locale } }: PageProps) {
   unstable_setRequestLocale(locale);
   const t = await getTranslations('pricing');
+  const tNav = await getTranslations('nav');
   const descriptor = getLocaleDescriptor(locale);
+
+  // Logged-in users can buy directly. Anonymous visitors get a
+  // localized sign-in CTA on each plan card — checkout requires an
+  // org id so the webhook can credit the right account.
+  const user = await getCurrentUser();
+  const orgId = (user && organizationIdFromUser(user)) ?? undefined;
 
   const indicativePrices: Record<typeof PLANS[number], Record<string, number>> = {
     starter:    { USD: 49,  EUR: 45,  BRL: 249, JPY: 7_300, GBP: 39 },
@@ -61,7 +69,14 @@ export default async function PricingPage({ params: { locale } }: PageProps) {
               </div>
             </CardContent>
             <CardFooter>
-              <CheckoutButton plan={plan} locale={locale} label={t('checkout')} />
+              <CheckoutButton
+                plan={plan}
+                locale={locale}
+                organizationId={orgId}
+                label={t('checkout')}
+                signInLabel={tNav('signIn')}
+                signInHref={`/${locale}/login`}
+              />
             </CardFooter>
           </Card>
         ))}

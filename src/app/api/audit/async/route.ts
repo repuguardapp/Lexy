@@ -133,33 +133,59 @@ export async function POST(request: Request) {
   // until the promise resolves, even after we send the 202 response.
   waitUntil(
     (async () => {
-      try {
-        await db.from('audits').update({ status: 'running' }).eq('id', pending.id);
+      const log = (step: string, extra: Record<string, unknown> = {}) =>
+        console.log('[audit/async]', JSON.stringify({ step, auditId: pending.id, ...extra }));
 
+      try {
+        log('background_started');
+        const { error: runningErr, count: runningCount } = await db
+          .from('audits')
+          .update({ status: 'running' }, { count: 'exact' })
+          .eq('id', pending.id);
+        log('status_running_written', { affected: runningCount, error: runningErr?.message });
+
+        log('extract_start');
         const extracted = await extractText(buffer, { filename, mime });
+        log('extract_done', { type: extracted.type, charCount: extracted.charCount, redactionCount: extracted.redactionCount });
+
+        log('multipass_start', { frameworks: meta.frameworks, lang: meta.targetLanguage });
         const report = await runMultiPassAudit({
           documentText: extracted.text,
           frameworks: meta.frameworks,
           targetLanguage: meta.targetLanguage
         });
         report.documentHash = hashDocument(extracted.text);
+        log('multipass_done', { findings: report.findings.length, riskScore: report.riskScore });
 
-        const { error: updateErr } = await db
+        log('completed_update_start');
+        const { error: updateErr, count: updateCount } = await db
           .from('audits')
-          .update({
-            status: 'completed',
-            document_hash: report.documentHash,
-            risk_score: report.riskScore,
-            summary: report.summary,
-            completed_at: report.generatedAt
-          })
+          .update(
+            {
+              status: 'completed',
+              document_hash: report.documentHash,
+              risk_score: report.riskScore,
+              summary: report.summary,
+              completed_at: report.generatedAt
+            },
+            { count: 'exact' }
+          )
           .eq('id', pending.id);
         if (updateErr) {
-          console.error('[audit/async] complete update failed:', updateErr);
+          log('completed_update_failed', { error: updateErr.message, code: updateErr.code });
           throw new Error(`audit_complete_update_failed: ${updateErr.message}`);
         }
+        // affected=0 here means the row vanished between insert and update — the
+        // service_role bypasses RLS so there is no policy in the way. If we ever
+        // see this, the cron purge or a manual delete fired mid-flight.
+        if (updateCount === 0) {
+          log('completed_update_zero_rows');
+          throw new Error('audit_complete_update_zero_rows');
+        }
+        log('completed_update_done', { affected: updateCount });
 
         if (report.findings.length > 0) {
+          log('findings_insert_start', { count: report.findings.length });
           const { error: findingsErr } = await db.from('audit_findings').insert(
             report.findings.map((f) => ({
               audit_id: pending.id,
@@ -173,24 +199,29 @@ export async function POST(request: Request) {
             }))
           );
           if (findingsErr) {
-            console.error('[audit/async] findings insert failed:', findingsErr);
+            log('findings_insert_failed', { error: findingsErr.message });
+          } else {
+            log('findings_insert_done');
           }
         }
 
         // Best-effort completion notification — failures are silent.
+        log('email_dispatch');
         void sendAuditCompletedEmail({
           organizationId: meta.organizationId,
           auditId: pending.id,
           riskScore: report.riskScore,
           findingsCount: report.findings.length
         });
+        log('background_done');
       } catch (err) {
         const message = err instanceof Error ? err.message : String(err);
-        console.error('[audit/async] background task failed:', { auditId: pending.id, error: message });
+        log('background_threw', { error: message });
         await db
           .from('audits')
           .update({ status: 'failed', error_message: message })
           .eq('id', pending.id);
+        log('failed_status_written');
         // Refund the credit — a failed audit (timeout, malformed model
         // output, persistence error) shouldn't cost the customer. The
         // SQL function is a no-op for the anonymous org.
@@ -198,10 +229,11 @@ export async function POST(request: Request) {
           p_org_id: meta.organizationId
         });
         if (refundErr) {
-          console.error('[audit/async] refund_failed:', { auditId: pending.id, refundErr });
+          log('refund_failed', { error: refundErr.message });
         }
       } finally {
         wipeBuffer(buffer);
+        log('buffer_wiped');
       }
     })()
   );

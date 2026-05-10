@@ -73,6 +73,13 @@ const POLL_INTERVAL_MS = 2_000;
 // roughly one timer fire per minute, which used to make a finished
 // audit look like a timeout when the user switched apps mid-run.
 const POLL_TIMEOUT_MS  = 10 * 60 * 1_000;
+// Hard circuit-breaker. Even if the wall-clock timeout above hasn't
+// triggered (e.g. the user's clock is wrong, or `Date.now()` is being
+// returned a stale value by some polyfill), 120 polls × 2s = 4 min
+// of polling is the absolute ceiling — beyond that we surface a
+// timeout error and stop. Belt-and-braces against any code path
+// that could leave the loop running indefinitely.
+const POLL_MAX_COUNT   = 120;
 const PHASE_INTERVAL_MS = 4_500;
 
 /**
@@ -189,6 +196,7 @@ function ProgressPanel({
     // race us.
     let stopped = false;
     let timer: ReturnType<typeof setInterval> | null = null;
+    let pollCount = 0;
     const stop = () => {
       stopped = true;
       if (timer !== null) {
@@ -201,6 +209,18 @@ function ProgressPanel({
 
     async function poll() {
       if (stopped) return;
+      pollCount += 1;
+
+      // Hard ceiling — independent of wall-clock — to make absolutely
+      // certain the loop cannot run forever even if everything else
+      // upstream is broken (clock skew, timer drift, status never
+      // transitioning). 120 polls at 2s each = 4 min absolute max.
+      if (pollCount > POLL_MAX_COUNT) {
+        stop();
+        setCurrent({ phase: 'failed', message: labels.failed.timeout });
+        return;
+      }
+
       try {
         const res = await fetch(`/api/audit/${auditId}`, { cache: 'no-store' });
         if (!res.ok) throw new Error(`poll_${res.status}`);

@@ -1,7 +1,7 @@
 'use client';
 
-import { useEffect, useRef, useState } from 'react';
-import { CheckCircle2, Loader2, XCircle } from 'lucide-react';
+import { useEffect, useState } from 'react';
+import { Loader2, XCircle } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
 
@@ -26,19 +26,11 @@ export interface AuditFormLabels {
   submit: string;
   running: string;
 
-  // Processing card
+  // Running card
   processing: {
     queued: string;
     running: string;
-    phases: readonly string[]; // rotated every PHASE_INTERVAL_MS
-  };
-
-  // Success card
-  completed: {
-    title: string;
-    riskScore: string;
-    findingsCount: string;
-    openReport: string;
+    phases: readonly string[]; // rotated client-side every PHASE_INTERVAL_MS
   };
 
   // Failure card
@@ -46,6 +38,17 @@ export interface AuditFormLabels {
     title: string;
     tryAgain: string;
     timeout: string;
+  };
+
+  // Kept for backwards compatibility with /audit and /embed/audit
+  // building the same bundle. No "completed" card is rendered any more
+  // — on success we redirect straight to the dashboard so the user
+  // sees the report, not an intermediate confirmation screen.
+  completed: {
+    title: string;
+    riskScore: string;
+    findingsCount: string;
+    openReport: string;
   };
 }
 
@@ -59,54 +62,48 @@ interface Props {
 
 type View =
   | { phase: 'idle' }
-  | { phase: 'uploading' }
-  | { phase: 'tracking'; auditId: string; status: AuditStatus; findingsCount: number; riskScore: number | null }
-  | { phase: 'completed'; auditId: string; findingsCount: number; riskScore: number | null }
+  | { phase: 'running' }
   | { phase: 'failed'; message: string };
 
-type AuditStatus = 'pending' | 'running' | 'completed' | 'failed';
-
-const POLL_INTERVAL_MS = 2_000;
-// 10 min covers cold start + extraction + Multi-Pass + persistence even
-// for the largest documents we accept. We also re-poll on
-// `visibilitychange` because iOS Safari throttles background tabs to
-// roughly one timer fire per minute, which used to make a finished
-// audit look like a timeout when the user switched apps mid-run.
-const POLL_TIMEOUT_MS  = 10 * 60 * 1_000;
-// Hard circuit-breaker. Even if the wall-clock timeout above hasn't
-// triggered (e.g. the user's clock is wrong, or `Date.now()` is being
-// returned a stale value by some polyfill), 120 polls × 2s = 4 min
-// of polling is the absolute ceiling — beyond that we surface a
-// timeout error and stop. Belt-and-braces against any code path
-// that could leave the loop running indefinitely.
-const POLL_MAX_COUNT   = 120;
 const PHASE_INTERVAL_MS = 4_500;
 
 /**
- * Audit form + async progress UI.
+ * Audit form — synchronous architecture.
  *
- * Always uses /api/audit/async — the form returns 202 with an audit id,
- * we then poll /api/audit/[id] until status flips to completed/failed.
- * This gives consistent UX whether the document is 1 KB or 25 MB.
+ * The client POSTs the document to /api/audit and awaits a single
+ * response that holds for the full duration of the Multi-Pass run
+ * (typically 30-90s, capped at Vercel Pro's 300s function ceiling).
+ * On success we redirect to the dashboard. On failure we render a
+ * card with the server-supplied error code so the user knows what
+ * actually happened.
+ *
+ * Three states:
+ *   idle    — form is editable
+ *   running — request in flight; rotating phrase animation on a
+ *             pure-client timer (no polling, no setInterval against
+ *             the server, no race with Vercel)
+ *   failed  — error card with structured message
+ *
+ * Success has no UI state because we navigate away the moment the
+ * fetch resolves — see `window.location.assign(body.redirect)` below.
  */
 export function AuditForm({ labels, frameworks, defaultLanguage, organizationId }: Props) {
   const [view, setView] = useState<View>({ phase: 'idle' });
 
-  if (view.phase === 'tracking' || view.phase === 'completed' || view.phase === 'failed') {
-    return <ProgressPanel view={view} labels={labels} />;
+  if (view.phase === 'running') return <RunningCard labels={labels} />;
+  if (view.phase === 'failed') {
+    return <FailedCard message={view.message} labels={labels} />;
   }
 
   async function onSubmit(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
-    setView({ phase: 'uploading' });
+    setView({ phase: 'running' });
 
     const form = new FormData(event.currentTarget);
     try {
-      const res = await fetch('/api/audit/async', { method: 'POST', body: form });
+      const res = await fetch('/api/audit', { method: 'POST', body: form });
 
-      // 402 Payment Required: server says the org is out of audit
-      // credits. Body carries the relative path to /pricing — we honour
-      // it instead of treating this as a failure card.
+      // 402 Payment Required: out of credits — honour the redirect.
       if (res.status === 402) {
         const body = (await res.json().catch(() => ({}))) as { redirect?: string };
         window.location.assign(body.redirect ?? '/pricing');
@@ -114,11 +111,18 @@ export function AuditForm({ labels, frameworks, defaultLanguage, organizationId 
       }
 
       if (!res.ok) {
-        const body = await res.json().catch(() => ({}));
-        throw new Error(body.error ?? `audit_failed_${res.status}`);
+        const body = (await res.json().catch(() => ({}))) as { error?: string; detail?: string };
+        // Surface the precise server-side code AND its detail to the
+        // user. The CEO asked explicitly for "Erreur de clé Anthropic"
+        // / "Échec écriture Supabase" — this is exactly the wire shape
+        // /api/audit emits.
+        const message = body.detail ? `${body.error ?? 'audit_failed'}: ${body.detail}` : body.error ?? `audit_failed_${res.status}`;
+        throw new Error(message);
       }
-      const { auditId } = await res.json();
-      setView({ phase: 'tracking', auditId, status: 'pending', findingsCount: 0, riskScore: null });
+
+      const body = (await res.json()) as { auditId: string; redirect: string };
+      // Straight to the report — no intermediate "audit complete" card.
+      window.location.assign(body.redirect);
     } catch (err) {
       setView({ phase: 'failed', message: err instanceof Error ? err.message : String(err) });
     }
@@ -126,7 +130,6 @@ export function AuditForm({ labels, frameworks, defaultLanguage, organizationId 
 
   const inputClass =
     'block w-full rounded-md border border-input bg-background px-3 py-2 text-sm placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 focus:ring-offset-background';
-  const submitting = view.phase === 'uploading';
 
   return (
     <form onSubmit={onSubmit} className="grid gap-6">
@@ -163,192 +166,24 @@ export function AuditForm({ labels, frameworks, defaultLanguage, organizationId 
 
       <input type="hidden" name="organizationId" value={organizationId} />
 
-      <Button type="submit" disabled={submitting} size="lg" className="w-full sm:w-auto">
-        {submitting ? labels.running : labels.submit}
+      <Button type="submit" size="lg" className="w-full sm:w-auto">
+        {labels.submit}
       </Button>
     </form>
   );
 }
 
 /* ------------------------------------------------------------------ */
-/* Progress panel                                                     */
+/* Running card — rotates phase strings purely client-side.           */
 /* ------------------------------------------------------------------ */
 
-function ProgressPanel({
-  view,
-  labels
-}: {
-  view: Extract<View, { phase: 'tracking' | 'completed' | 'failed' }>;
-  labels: AuditFormLabels;
-}) {
-  const [current, setCurrent] = useState(view);
-  const startedAt = useRef<number>(Date.now());
-
-  useEffect(() => {
-    if (current.phase !== 'tracking') return;
-
-    // `stopped` is the single source of truth for "do not poll any
-    // more". setInterval ticks live outside React's render cycle, so
-    // an in-flight tick that fires the moment we transition to
-    // completed used to issue one or two extra GETs before useEffect
-    // could clean up the timer. Each branch below now flips the flag
-    // AND clears the interval directly, so the very next tick can't
-    // race us.
-    let stopped = false;
-    let timer: ReturnType<typeof setInterval> | null = null;
-    let pollCount = 0;
-    const stop = () => {
-      stopped = true;
-      if (timer !== null) {
-        clearInterval(timer);
-        timer = null;
-      }
-    };
-
-    const auditId = current.auditId;
-
-    async function poll() {
-      if (stopped) return;
-      pollCount += 1;
-
-      // Hard ceiling — independent of wall-clock — to make absolutely
-      // certain the loop cannot run forever even if everything else
-      // upstream is broken (clock skew, timer drift, status never
-      // transitioning). 120 polls at 2s each = 4 min absolute max.
-      if (pollCount > POLL_MAX_COUNT) {
-        stop();
-        setCurrent({ phase: 'failed', message: labels.failed.timeout });
-        return;
-      }
-
-      try {
-        const res = await fetch(`/api/audit/${auditId}`, { cache: 'no-store' });
-        if (!res.ok) throw new Error(`poll_${res.status}`);
-        const body = await res.json();
-        if (stopped) return;
-
-        if (body.status === 'completed') {
-          stop();
-          setCurrent({
-            phase: 'completed',
-            auditId,
-            findingsCount: body.findingsCount ?? 0,
-            riskScore: body.riskScore ?? null
-          });
-          return;
-        }
-        if (body.status === 'failed') {
-          stop();
-          setCurrent({ phase: 'failed', message: body.error ?? 'audit_failed' });
-          return;
-        }
-        if (Date.now() - startedAt.current > POLL_TIMEOUT_MS) {
-          stop();
-          setCurrent({ phase: 'failed', message: labels.failed.timeout });
-          return;
-        }
-
-        setCurrent({
-          phase: 'tracking',
-          auditId,
-          status: body.status,
-          findingsCount: body.findingsCount ?? 0,
-          riskScore: body.riskScore ?? null
-        });
-      } catch (err) {
-        if (stopped) return;
-        stop();
-        setCurrent({
-          phase: 'failed',
-          message: err instanceof Error ? err.message : String(err)
-        });
-      }
-    }
-
-    timer = setInterval(poll, POLL_INTERVAL_MS);
-    void poll();
-
-    // iOS Safari (and most mobile browsers) throttle setInterval down to
-    // one fire per minute on background tabs. Without this listener, an
-    // audit that finished while the tab was hidden would not be
-    // discovered until the user manually refreshed.
-    const onVisible = () => {
-      if (!stopped && document.visibilityState === 'visible') void poll();
-    };
-    document.addEventListener('visibilitychange', onVisible);
-
-    return () => {
-      stop();
-      document.removeEventListener('visibilitychange', onVisible);
-    };
-  }, [current.phase === 'tracking' ? current.auditId : null]); // eslint-disable-line react-hooks/exhaustive-deps
-
-  if (current.phase === 'failed') {
-    return (
-      <div className="grid gap-4 rounded-lg border border-destructive/30 bg-destructive/5 p-6">
-        <div className="flex items-center gap-3">
-          <XCircle className="h-5 w-5 text-destructive" aria-hidden />
-          <div className="font-medium">{labels.failed.title}</div>
-        </div>
-        <p className="text-sm text-muted-foreground break-words">{current.message}</p>
-        <Button variant="outline" onClick={() => window.location.reload()}>
-          {labels.failed.tryAgain}
-        </Button>
-      </div>
-    );
-  }
-
-  if (current.phase === 'completed') {
-    return (
-      <div className="grid gap-4 rounded-lg border border-green-500/30 bg-green-500/5 p-6">
-        <div className="flex items-center gap-3">
-          <CheckCircle2 className="h-5 w-5 text-green-600" aria-hidden />
-          <div className="font-medium">{labels.completed.title}</div>
-        </div>
-        <div className="grid grid-cols-2 gap-4 text-sm">
-          <div>
-            <div className="text-xs uppercase tracking-wider text-muted-foreground">
-              {labels.completed.riskScore}
-            </div>
-            <div className="mt-1 text-2xl font-semibold tabular-nums">
-              {current.riskScore ?? '—'}/100
-            </div>
-          </div>
-          <div>
-            <div className="text-xs uppercase tracking-wider text-muted-foreground">
-              {labels.completed.findingsCount}
-            </div>
-            <div className="mt-1 text-2xl font-semibold tabular-nums">{current.findingsCount}</div>
-          </div>
-        </div>
-        <Button asChild>
-          <a href={`../dashboard/${current.auditId}`}>{labels.completed.openReport}</a>
-        </Button>
-      </div>
-    );
-  }
-
-  return <RunningCard status={current.status} labels={labels} />;
-}
-
-/* ------------------------------------------------------------------ */
-/* Running card with animated phase rotation                          */
-/* ------------------------------------------------------------------ */
-
-function RunningCard({
-  status,
-  labels
-}: {
-  status: AuditStatus;
-  labels: AuditFormLabels;
-}) {
+function RunningCard({ labels }: { labels: AuditFormLabels }) {
   const phases = labels.processing.phases;
   const [phaseIndex, setPhaseIndex] = useState(0);
 
   // Rotate phrases every PHASE_INTERVAL_MS for a feeling of progress.
-  // The rotation is purely cosmetic — it does not reflect actual
-  // backend stages because the server-side pipeline is opaque to the
-  // client (we only see status='pending' or 'running' on poll).
+  // The rotation is purely cosmetic — there is no server pulse driving
+  // it, the API is held open by the parent component's pending fetch.
   useEffect(() => {
     if (phases.length <= 1) return;
     const t = setInterval(() => {
@@ -357,15 +192,13 @@ function RunningCard({
     return () => clearInterval(t);
   }, [phases.length]);
 
-  const headline =
-    status === 'pending' ? labels.processing.queued : labels.processing.running;
   const subPhase = phases[phaseIndex] ?? '';
 
   return (
     <div className="grid gap-4 rounded-lg border bg-muted/30 p-6">
       <div className="flex items-center gap-3">
         <Loader2 className="h-5 w-5 animate-spin text-muted-foreground" aria-hidden />
-        <div className="font-medium">{headline}</div>
+        <div className="font-medium">{labels.processing.running}</div>
       </div>
       <div
         key={phaseIndex}
@@ -375,16 +208,34 @@ function RunningCard({
         {subPhase}
       </div>
       <div className="h-1.5 overflow-hidden rounded-full bg-muted">
-        <div
-          className={cn(
-            'h-full bg-foreground transition-all',
-            status === 'pending' ? 'w-1/3' : 'w-2/3 animate-pulse'
-          )}
-        />
+        <div className="h-full w-2/3 animate-pulse bg-foreground" />
       </div>
     </div>
   );
 }
+
+/* ------------------------------------------------------------------ */
+/* Failed card — structured server error + retry CTA.                 */
+/* ------------------------------------------------------------------ */
+
+function FailedCard({ message, labels }: { message: string; labels: AuditFormLabels }) {
+  return (
+    <div className="grid gap-4 rounded-lg border border-destructive/30 bg-destructive/5 p-6">
+      <div className="flex items-center gap-3">
+        <XCircle className="h-5 w-5 text-destructive" aria-hidden />
+        <div className="font-medium">{labels.failed.title}</div>
+      </div>
+      <p className="text-sm text-muted-foreground break-words font-mono">{message}</p>
+      <Button variant="outline" onClick={() => window.location.reload()}>
+        {labels.failed.tryAgain}
+      </Button>
+    </div>
+  );
+}
+
+/* ------------------------------------------------------------------ */
+/* Form field helper                                                  */
+/* ------------------------------------------------------------------ */
 
 function Field({
   label,
@@ -403,3 +254,4 @@ function Field({
     </label>
   );
 }
+

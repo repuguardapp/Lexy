@@ -8,25 +8,30 @@ import { hashDocument, wipeBuffer } from '@/lib/zero-knowledge';
 import type { FrameworkId } from '@/lib/legal-frameworks';
 
 /**
- * Cost protection. Tighter on IP (anonymous abuse) than on org (paying
- * customer). Production should swap the in-memory store for Redis.
- */
-const IP_LIMIT  = { windowMs: 60 * 60 * 1000, max: 5  };  //  5/h per IP
-const ORG_LIMIT = { windowMs: 24 * 60 * 60 * 1000, max: 50 }; // 50/day per org
-
-/**
- * Audit creation endpoint.
+ * Synchronous audit endpoint — single request, single response.
  *
- * We run on the Node.js runtime (not Edge) because:
- *   • the legal pass can take 30-60s on large documents and Edge has a 25s
- *     hard limit on Vercel;
- *   • we need `Buffer` to wipe the document bytes deterministically.
+ * The caller POSTs the document and the audit metadata. We hold the
+ * connection open through extraction + Multi-Pass + persistence, then
+ * return the full audit envelope (audit id + risk score + findings
+ * count). On any failure we return a structured error body the client
+ * can render directly to the user.
  *
- * The handler accepts multipart/form-data so the file never round-trips
- * through a JSON-encoded base64 (which would double its memory footprint).
+ * No polling, no background task, no waitUntil. The whole request
+ * fits inside Vercel Pro's 300s maxDuration; Anthropic and OpenAI are
+ * configured with explicit per-call timeouts (240s / 90s) so we have
+ * comfortable headroom.
+ *
+ * Why we run on the Node.js runtime (not Edge):
+ *   • pdf-parse + mammoth ship Node-only code paths (Buffer, fs).
+ *   • We need Buffer.fill(0) to wipe document bytes deterministically
+ *     on every exit path (Zero-Knowledge guarantee).
  */
 export const runtime = 'nodejs';
 export const maxDuration = 300;
+
+/** Cost protection. Tighter on IP than on org. */
+const IP_LIMIT  = { windowMs: 60 * 60 * 1000, max: 5  };       // 5/h per IP
+const ORG_LIMIT = { windowMs: 24 * 60 * 60 * 1000, max: 50 };  // 50/day per org
 
 const Meta = z.object({
   organizationId: z.string().uuid(),
@@ -34,14 +39,64 @@ const Meta = z.object({
   targetLanguage: z.string().min(2).max(10)
 });
 
+/**
+ * Strongly-typed error envelope so the client can either show the
+ * technical code (failure card) or branch on it (e.g. 402 → pricing
+ * redirect). Every code below corresponds to exactly one place in the
+ * pipeline that can fail, so a stuck audit is impossible: we either
+ * return success or we return one of these.
+ */
+type AuditError =
+  | 'document_required'
+  | 'document_too_large'
+  | 'invalid_metadata'
+  | 'rate_limited'
+  | 'no_credits'
+  | 'credit_check_failed'
+  | 'extraction_failed'
+  | 'anthropic_error'
+  | 'openai_error'
+  | 'multipass_failed'
+  | 'supabase_write_failed';
+
+function errorJson(error: AuditError, detail: string, status: number, extra: Record<string, unknown> = {}) {
+  return NextResponse.json({ error, detail, ...extra }, { status });
+}
+
+/**
+ * Classify a Multi-Pass exception so the customer sees what actually
+ * failed. The Anthropic and OpenAI SDKs both produce typed error
+ * subclasses but their constructor names are stable enough that
+ * matching on the message + class name keeps the dependency graph
+ * minimal.
+ */
+function classifyAiError(err: unknown): { code: AuditError; detail: string } {
+  const detail = err instanceof Error ? err.message : String(err);
+  const name = err instanceof Error ? err.constructor.name : '';
+  const lower = detail.toLowerCase();
+
+  if (name.startsWith('Anthropic') || lower.includes('anthropic') || lower.includes('claude')) {
+    return { code: 'anthropic_error', detail };
+  }
+  if (name.startsWith('OpenAI') || lower.includes('openai') || lower.includes('gpt')) {
+    return { code: 'openai_error', detail };
+  }
+  return { code: 'multipass_failed', detail };
+}
+
 export async function POST(request: Request) {
+  const t0 = Date.now();
+  const log = (step: string, extra: Record<string, unknown> = {}) =>
+    console.log('[audit]', JSON.stringify({ step, t: Date.now() - t0, ...extra }));
+
+  // ---- 1. Parse + validate input ------------------------------------
   const form = await request.formData();
   const file = form.get('document');
   if (!(file instanceof Blob)) {
-    return NextResponse.json({ error: 'document_required' }, { status: 400 });
+    return errorJson('document_required', 'No file in `document` form field.', 400);
   }
   if (file.size > 25 * 1024 * 1024) {
-    return NextResponse.json({ error: 'document_too_large' }, { status: 413 });
+    return errorJson('document_too_large', `File is ${file.size} bytes, max 25 MB.`, 413);
   }
 
   let meta: z.infer<typeof Meta>;
@@ -52,17 +107,18 @@ export async function POST(request: Request) {
       targetLanguage: form.get('targetLanguage')
     });
   } catch (err) {
-    return NextResponse.json({ error: 'invalid_metadata', detail: String(err) }, { status: 400 });
+    return errorJson('invalid_metadata', err instanceof Error ? err.message : String(err), 400);
   }
+  log('input_parsed', { fileSize: file.size, frameworks: meta.frameworks, lang: meta.targetLanguage });
 
-  // Rate limit: cheap-fail before we spend AI credits.
+  // ---- 2. Rate limit ------------------------------------------------
   const ip = clientIpFrom(request.headers);
   const ipLimit  = rateLimit({ key: `audit:ip:${ip}`,                ...IP_LIMIT });
   const orgLimit = rateLimit({ key: `audit:org:${meta.organizationId}`, ...ORG_LIMIT });
   if (!ipLimit.ok || !orgLimit.ok) {
     const offender = !ipLimit.ok ? ipLimit : orgLimit;
     return NextResponse.json(
-      { error: 'rate_limited', resetAt: offender.resetAt },
+      { error: 'rate_limited', detail: 'Too many requests', resetAt: offender.resetAt },
       {
         status: 429,
         headers: {
@@ -73,36 +129,80 @@ export async function POST(request: Request) {
     );
   }
 
+  const db = supabaseService();
+
+  // ---- 3. Credit gate (atomic) --------------------------------------
+  // Anonymous-org bypasses the check inside the SQL function.
+  const { data: consumed, error: creditErr } = await db.rpc('try_consume_audit_credit', {
+    p_org_id: meta.organizationId
+  });
+  if (creditErr) {
+    log('credit_check_failed', { error: creditErr.message });
+    return errorJson('credit_check_failed', creditErr.message, 500);
+  }
+  if (!consumed) {
+    log('no_credits');
+    return NextResponse.json(
+      { error: 'no_credits', detail: 'Out of audit credits.', redirect: '/pricing' },
+      { status: 402 }
+    );
+  }
+  log('credit_consumed');
+
+  // Helper: any failure path beyond this point must refund the credit.
+  // Centralising this guarantees we never leak a paid credit when the
+  // audit didn't actually deliver.
+  const refundIfNeeded = async (reason: string) => {
+    const { error: refundErr } = await db.rpc('refund_audit_credit', {
+      p_org_id: meta.organizationId
+    });
+    if (refundErr) {
+      log('refund_failed', { reason, error: refundErr.message });
+    } else {
+      log('credit_refunded', { reason });
+    }
+  };
+
+  // ---- 4. Extract text ----------------------------------------------
   const buffer = Buffer.from(await file.arrayBuffer());
   const filename = file instanceof File ? file.name : undefined;
   const mime = file.type || undefined;
 
+  let extracted;
+  try {
+    extracted = await extractText(buffer, { filename, mime });
+    log('extracted', { type: extracted.type, charCount: extracted.charCount, redactionCount: extracted.redactionCount });
+  } catch (err) {
+    wipeBuffer(buffer);
+    await refundIfNeeded('extraction_failed');
+    return errorJson('extraction_failed', err instanceof Error ? err.message : String(err), 422);
+  }
+
+  // ---- 5. Run Multi-Pass --------------------------------------------
   let report;
   try {
-    // 1. Extract text (PDF/DOCX/MD/TXT) — server-only, sensitive.
-    const extracted = await extractText(buffer, { filename, mime });
-    // 2. Run Multi-Pass over the extracted text.
+    log('multipass_start');
     report = await runMultiPassAudit({
       documentText: extracted.text,
       frameworks: meta.frameworks,
       targetLanguage: meta.targetLanguage
     });
-    // Override hash from raw bytes (covers identical text from different
-    // file formats — same hash, same audit, deduped).
     report.documentHash = hashDocument(extracted.text);
+    log('multipass_done', { findings: report.findings.length, riskScore: report.riskScore });
   } catch (err) {
-    return NextResponse.json(
-      { error: 'extraction_or_audit_failed', detail: err instanceof Error ? err.message : String(err) },
-      { status: 422 }
-    );
+    wipeBuffer(buffer);
+    const { code, detail } = classifyAiError(err);
+    log('multipass_failed', { code, detail });
+    await refundIfNeeded(code);
+    return errorJson(code, detail, 502);
   } finally {
-    // Zero-Knowledge: wipe raw bytes whatever the path (success/failure).
+    // Wipe as early as we can — once Multi-Pass has consumed the text
+    // we never need the raw bytes again.
     wipeBuffer(buffer);
   }
 
-  // Persist only the AI-authored report (no document body, no PII).
-  const db = supabaseService();
-  const { data: audit, error } = await db
+  // ---- 6. Persist ---------------------------------------------------
+  const { data: audit, error: insertErr } = await db
     .from('audits')
     .insert({
       organization_id: meta.organizationId,
@@ -117,21 +217,23 @@ export async function POST(request: Request) {
     .select('id')
     .single();
 
-  if (error || !audit) {
-    console.error('[audit] persistence_failed:', {
-      organizationId: meta.organizationId,
-      supabaseError: error
-        ? { code: error.code, message: error.message, details: error.details, hint: error.hint }
-        : 'no row returned'
+  if (insertErr || !audit) {
+    log('supabase_write_failed', {
+      code: insertErr?.code,
+      message: insertErr?.message,
+      hint: insertErr?.hint
     });
-    return NextResponse.json(
-      { error: 'persistence_failed', detail: error?.message ?? 'no row' },
-      { status: 500 }
+    await refundIfNeeded('supabase_write_failed');
+    return errorJson(
+      'supabase_write_failed',
+      insertErr?.message ?? 'audit row insert returned no id',
+      500
     );
   }
+  log('audit_persisted', { auditId: audit.id });
 
   if (report.findings.length > 0) {
-    await db.from('audit_findings').insert(
+    const { error: findingsErr } = await db.from('audit_findings').insert(
       report.findings.map((f) => ({
         audit_id: audit.id,
         framework_id: f.framework,
@@ -143,7 +245,22 @@ export async function POST(request: Request) {
         evidence: f.evidence
       }))
     );
+    if (findingsErr) {
+      // The audit row IS persisted at this point — we don't fail the
+      // whole request just because the findings table errored. The
+      // dashboard will render the audit with zero findings and the log
+      // tells us the row to repair.
+      log('findings_insert_failed', { error: findingsErr.message, auditId: audit.id });
+    } else {
+      log('findings_persisted', { count: report.findings.length });
+    }
   }
 
-  return NextResponse.json({ auditId: audit.id, report });
+  log('done', { auditId: audit.id });
+  return NextResponse.json({
+    auditId: audit.id,
+    riskScore: report.riskScore,
+    findingsCount: report.findings.length,
+    redirect: `/dashboard/${audit.id}`
+  });
 }

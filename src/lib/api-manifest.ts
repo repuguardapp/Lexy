@@ -13,7 +13,7 @@
  * type-check failure.
  */
 
-export type Stability = 'stable' | 'beta' | 'internal';
+export type Stability = 'stable' | 'beta' | 'internal' | 'deprecated';
 
 export interface ApiField {
   name: string;
@@ -79,30 +79,18 @@ export const ENDPOINTS: ApiEndpoint[] = [
   {
     method: 'POST',
     path: '/api/audit/async',
-    summary: 'Queue an asynchronous audit',
+    summary: 'Deprecated — use POST /api/audit',
     description:
-      'Same as /api/audit but returns 202 immediately with an audit id. ' +
-      'Poll /api/audit/[id] for completion. Designed for large documents ' +
-      'and the new audit form UX.',
-    stability: 'stable',
+      'Returns 410 Gone with a redirect pointer to /api/audit. The ' +
+      'async + polling pipeline was retired once Vercel Pro raised the ' +
+      'function timeout to 300s; the synchronous endpoint is now the ' +
+      'one true path.',
+    stability: 'deprecated',
     auth: 'none',
-    rateLimit: '5 / hour per IP, 50 / day per organization',
-    requestBody: {
-      contentType: 'multipart/form-data',
-      fields: [
-        { name: 'document',       type: 'file',   required: true,  description: 'PDF, DOCX, MD or TXT.' },
-        { name: 'organizationId', type: 'uuid',   required: true,  description: 'Tenant id.' },
-        { name: 'frameworks',     type: 'string', required: true,  description: 'Comma-separated framework ids.' },
-        { name: 'targetLanguage', type: 'string', required: true,  description: 'BCP-47 tag.' }
-      ]
-    },
+    rateLimit: 'n/a',
     response: {
-      success: { status: 202, description: '{ auditId, status: "pending" }' },
-      errors: [
-        { status: 400, code: 'document_required',  description: 'No file in the multipart body.' },
-        { status: 429, code: 'rate_limited',       description: 'Limits hit.' },
-        { status: 500, code: 'persistence_failed', description: 'Could not insert the pending audit row.' }
-      ]
+      success: { status: 410, description: '{ error: "endpoint_deprecated", redirect: "/api/audit" }' },
+      errors: []
     }
   },
   {

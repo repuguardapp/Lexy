@@ -139,7 +139,14 @@ export async function legalAudit(input: AuditInput): Promise<AuditPassResult> {
   const system = buildAuditSystemPrompt(input.frameworks);
   const message = await anthropic().messages.create({
     model: ANTHROPIC_MODEL,
-    max_tokens: 4096,
+    // 16K is roomy for a thorough multi-finding audit. Sonnet 4.6
+    // tops out at 64K so we have headroom; the previous 4K cap was
+    // truncating outputs mid-array — Claude would write a confident
+    // executive summary mentioning N findings and then run out of
+    // budget before populating the findings[] in the tool input.
+    // Empirically a 7-finding detailed report is ~3K tokens; 16K
+    // covers a 30-finding policy without strain.
+    max_tokens: 16384,
     temperature: 0,
     system,
     tools: [SUBMIT_AUDIT_TOOL],

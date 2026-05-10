@@ -91,6 +91,15 @@
     "terms": "AGB",
     "dpa": "AVV"
   },
+  "billing": {
+    "successTitle": "Geschafft. Willkommen bei LexyFlow.",
+    "successBody": "Ihr Abonnement ist aktiv. Stripe hat Ihnen die Quittung per E-Mail gesendet. Ihr Arbeitsbereich ist eingerichtet — gehen Sie zur Audit-Seite, um Ihr erstes Dokument hochzuladen.",
+    "successCta": "Mein erstes Audit starten",
+    "successDocs": "Dokumentation lesen",
+    "manage": "Abrechnung verwalten",
+    "manageOpening": "Öffnen…",
+    "signOut": "Abmelden"
+  },
   "errors": {
     "generic": "Etwas ist schiefgelaufen. Bitte erneut versuchen.",
     "document_required": "Bitte zuerst ein Dokument hochladen.",

@@ -91,6 +91,15 @@
     "terms": "Terms",
     "dpa": "DPA"
   },
+  "billing": {
+    "successTitle": "You're in. Welcome to LexyFlow.",
+    "successBody": "Your subscription is active. Stripe has emailed your receipt. We've provisioned your workspace — head to the audit page to upload your first document.",
+    "successCta": "Run my first audit",
+    "successDocs": "Read the docs",
+    "manage": "Manage billing",
+    "manageOpening": "Opening…",
+    "signOut": "Sign out"
+  },
   "errors": {
     "generic": "Something went wrong. Please retry in a moment.",
     "document_required": "Please upload a document first.",

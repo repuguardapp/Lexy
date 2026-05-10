@@ -39,6 +39,7 @@ export default async function DashboardPage({
 }: PageProps) {
   unstable_setRequestLocale(locale);
   const t = await getTranslations('dashboard');
+  const tBilling = await getTranslations('billing');
 
   const user = await getCurrentUser();
   if (!user) {
@@ -81,8 +82,8 @@ export default async function DashboardPage({
           <Button asChild>
             <Link href="/audit">{t('newAudit')}</Link>
           </Button>
-          <ManageBillingButton />
-          <SignOutButton />
+          <ManageBillingButton label={tBilling('manage')} loadingLabel={tBilling('manageOpening')} />
+          <SignOutButton label={tBilling('signOut')} />
         </div>
       </header>
 

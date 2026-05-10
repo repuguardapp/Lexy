@@ -4,7 +4,14 @@ import { CreditCard } from 'lucide-react';
 import { useState } from 'react';
 import { Button } from '@/components/ui/button';
 
-export function ManageBillingButton() {
+interface Props {
+  /** Localized idle-state label, e.g. "Gérer la facturation". */
+  label: string;
+  /** Localized in-flight label, e.g. "Ouverture…". */
+  loadingLabel: string;
+}
+
+export function ManageBillingButton({ label, loadingLabel }: Props) {
   const [busy, setBusy] = useState(false);
   const [hint, setHint] = useState<string | null>(null);
 
@@ -31,7 +38,7 @@ export function ManageBillingButton() {
     <div className="grid gap-1 text-end">
       <Button onClick={go} disabled={busy} variant="outline" size="sm">
         <CreditCard className="me-2 h-4 w-4" aria-hidden />
-        {busy ? 'Opening…' : 'Manage billing'}
+        {busy ? loadingLabel : label}
       </Button>
       {hint && <span className="text-xs text-destructive">{hint}</span>}
     </div>

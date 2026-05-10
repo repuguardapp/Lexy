@@ -91,6 +91,15 @@
     "terms": "Términos",
     "dpa": "DPA"
   },
+  "billing": {
+    "successTitle": "Listo. Bienvenido a LexyFlow.",
+    "successBody": "Tu suscripción está activa. Stripe te ha enviado el recibo por email. Tu espacio de trabajo está provisionado — ve a la página de auditoría para subir tu primer documento.",
+    "successCta": "Lanzar mi primera auditoría",
+    "successDocs": "Leer la documentación",
+    "manage": "Gestionar la facturación",
+    "manageOpening": "Abriendo…",
+    "signOut": "Cerrar sesión"
+  },
   "errors": {
     "generic": "Algo salió mal. Por favor reinténtalo en un momento.",
     "document_required": "Por favor sube un documento primero.",

@@ -91,6 +91,15 @@
     "terms": "利用規約",
     "dpa": "DPA"
   },
+  "billing": {
+    "successTitle": "完了しました。LexyFlow へようこそ。",
+    "successBody": "サブスクリプションが有効になりました。Stripe から領収書をメールでお送りしました。ワークスペースの準備が整いましたので、監査ページから最初のドキュメントをアップロードしてください。",
+    "successCta": "最初の監査を実行",
+    "successDocs": "ドキュメントを読む",
+    "manage": "請求の管理",
+    "manageOpening": "開いています…",
+    "signOut": "サインアウト"
+  },
   "errors": {
     "generic": "エラーが発生しました。しばらくしてから再試行してください。",
     "document_required": "まずドキュメントをアップロードしてください。",

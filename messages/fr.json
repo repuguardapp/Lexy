@@ -91,6 +91,22 @@
     "terms": "Conditions",
     "dpa": "DPA"
   },
+  "errors": {
+    "generic": "Une erreur est survenue. Veuillez réessayer dans un instant.",
+    "document_required": "Veuillez d'abord déposer un document.",
+    "document_too_large": "Le document dépasse la limite de 25 Mo.",
+    "invalid_metadata": "Les champs du formulaire d'audit sont incomplets ou invalides.",
+    "rate_limited": "Trop d'audits sur une courte période — veuillez patienter avant de réessayer.",
+    "no_credits": "Vos crédits d'audit sont épuisés. Veuillez choisir un plan pour continuer.",
+    "credit_check_failed": "Impossible de vérifier vos crédits d'audit. Veuillez réessayer.",
+    "extraction_failed": "Impossible de lire ce document. S'il s'agit d'un PDF scanné, veuillez l'OCRiser puis réessayer.",
+    "anthropic_error": "Le moteur de conformité est temporairement indisponible. Veuillez réessayer.",
+    "openai_error": "Le moteur de traduction est temporairement indisponible. Veuillez réessayer.",
+    "multipass_failed": "Le pipeline d'audit a rencontré un problème inattendu. Veuillez réessayer.",
+    "supabase_write_failed": "Impossible d'enregistrer le rapport. Veuillez réessayer.",
+    "audit_stream_truncated": "La connexion a été interrompue. Veuillez réessayer.",
+    "audit_no_stream": "Le serveur n'a pas envoyé de réponse. Veuillez réessayer."
+  },
   "report": {
     "title": "Rapport d'audit de conformité",
     "generatedOn": "Généré par LexyFlow le {date}.",

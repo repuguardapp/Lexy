@@ -40,6 +40,10 @@ export interface AuditFormLabels {
     timeout: string;
   };
 
+  /** Localized message per server error code (lookup `errors[code]`).
+   *  Includes a `generic` fallback for any code not in the map. */
+  errors: Readonly<Record<string, string>>;
+
   // Kept for backwards compatibility with /audit and /embed/audit
   // building the same bundle. No "completed" card is rendered any more
   // — on success we redirect straight to the dashboard so the user
@@ -64,6 +68,19 @@ type View =
   | { phase: 'idle' }
   | { phase: 'running'; progress: number }
   | { phase: 'failed'; message: string };
+
+/**
+ * Typed wrapper used purely to mark which throws inside onSubmit
+ * already carry a known server error code — anything else is
+ * coerced to `generic` in the catch. The String value of `err.code`
+ * is the dictionary key for `labels.errors[...]`.
+ */
+class AuditError extends Error {
+  constructor(public code: string) {
+    super(code);
+    this.name = 'AuditError';
+  }
+}
 
 /**
  * Audit form — synchronous architecture.
@@ -112,8 +129,10 @@ export function AuditForm({ labels, frameworks, defaultLanguage, organizationId 
       // with proper HTTP status codes and a non-streamed JSON body.
       if (!res.ok) {
         const body = (await res.json().catch(() => ({}))) as { error?: string; detail?: string };
-        const message = body.detail ? `${body.error ?? 'audit_failed'}: ${body.detail}` : body.error ?? `audit_failed_${res.status}`;
-        throw new Error(message);
+        // Log technical detail for debugging — UI shows a friendly
+        // localized message via labels.errors[code].
+        if (body.detail) console.error('[audit] server error detail:', body.error, body.detail);
+        throw new AuditError(body.error ?? 'generic');
       }
 
       // Slow-path: NDJSON stream. One JSON object per line:
@@ -154,18 +173,21 @@ export function AuditForm({ labels, frameworks, defaultLanguage, organizationId 
               window.location.assign(evt.redirect);
               return;
             }
-            const message = evt.detail
-              ? `${evt.error ?? 'audit_failed'}: ${evt.detail}`
-              : evt.error ?? 'audit_failed';
-            throw new Error(message);
+            // Final event with ok:false carries the structured code;
+            // log the technical detail and surface only the code so
+            // the FailedCard can localize it.
+            if (evt.detail) console.error('[audit] server error detail:', evt.error, evt.detail);
+            throw new AuditError(evt.error ?? 'generic');
           }
         }
       }
 
       // Stream ended without a `final` event — the server died mid-flight.
-      throw new Error('audit_stream_truncated');
+      throw new AuditError('audit_stream_truncated');
     } catch (err) {
-      setView({ phase: 'failed', message: err instanceof Error ? err.message : String(err) });
+      const code = err instanceof AuditError ? err.code : 'generic';
+      if (!(err instanceof AuditError)) console.error('[audit] client error:', err);
+      setView({ phase: 'failed', message: code });
     }
   }
 
@@ -272,13 +294,19 @@ function RunningCard({ progress, labels }: { progress: number; labels: AuditForm
 /* ------------------------------------------------------------------ */
 
 function FailedCard({ message, labels }: { message: string; labels: AuditFormLabels }) {
+  // `message` is the server error code (e.g. "anthropic_error",
+  // "no_credits"). Look it up in the localized errors map so the
+  // user reads a human sentence in their language. Fall back to the
+  // generic message if the code is unknown.
+  const friendly =
+    labels.errors[message] ?? labels.errors.generic ?? labels.failed.title;
   return (
     <div className="grid gap-4 rounded-lg border border-destructive/30 bg-destructive/5 p-6">
       <div className="flex items-center gap-3">
         <XCircle className="h-5 w-5 text-destructive" aria-hidden />
         <div className="font-medium">{labels.failed.title}</div>
       </div>
-      <p className="text-sm text-muted-foreground break-words font-mono">{message}</p>
+      <p className="text-sm text-muted-foreground break-words">{friendly}</p>
       <Button variant="outline" onClick={() => window.location.reload()}>
         {labels.failed.tryAgain}
       </Button>

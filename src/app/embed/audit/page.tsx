@@ -66,7 +66,7 @@ export default async function EmbedAuditPage({ searchParams }: PageProps) {
             </header>
 
             <AuditForm
-              labels={buildAuditFormLabels(t)}
+              labels={buildAuditFormLabels(t, ((messages as unknown as { errors?: Record<string, string> }).errors ?? {}))}
               frameworks={
                 preselect.length > 0
                   ? FRAMEWORKS.filter((f) => preselect.includes(f.id)).map((f) => ({ id: f.id, name: f.name }))

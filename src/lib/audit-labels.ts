@@ -14,7 +14,7 @@ import type { AuditFormLabels } from '@/components/AuditForm';
  */
 type Translator = Awaited<ReturnType<typeof getTranslations>>;
 
-export function buildAuditFormLabels(t: Translator): AuditFormLabels {
+export function buildAuditFormLabels(t: Translator, errorMessages: Readonly<Record<string, string>>): AuditFormLabels {
   return {
     upload: t('upload'),
     uploadHint: t('uploadHint'),
@@ -38,6 +38,7 @@ export function buildAuditFormLabels(t: Translator): AuditFormLabels {
       title: t('failed.title'),
       tryAgain: t('failed.tryAgain'),
       timeout: t('failed.timeout')
-    }
+    },
+    errors: errorMessages
   };
 }

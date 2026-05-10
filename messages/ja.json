@@ -86,10 +86,26 @@
     }
   },
   "footer": {
-    "copyright": "© {year} LexyFlow. All rights reserved.",
+    "copyright": "© {year} LexyFlow. 無断複写・転載を禁じます。",
     "privacy": "プライバシー",
     "terms": "利用規約",
     "dpa": "DPA"
+  },
+  "errors": {
+    "generic": "エラーが発生しました。しばらくしてから再試行してください。",
+    "document_required": "まずドキュメントをアップロードしてください。",
+    "document_too_large": "ドキュメントは 25 MB の上限を超えています。",
+    "invalid_metadata": "監査フォームの項目が不完全または無効です。",
+    "rate_limited": "短時間に監査が多すぎます — お待ちいただいてから再試行してください。",
+    "no_credits": "監査クレジットが不足しています。プランを選択してください。",
+    "credit_check_failed": "監査クレジットを確認できませんでした。再試行してください。",
+    "extraction_failed": "このドキュメントを読み取れませんでした。スキャン PDF の場合は OCR を実行してから再試行してください。",
+    "anthropic_error": "コンプライアンスエンジンは一時的に利用できません。再試行してください。",
+    "openai_error": "翻訳エンジンは一時的に利用できません。再試行してください。",
+    "multipass_failed": "監査パイプラインで予期しない問題が発生しました。再試行してください。",
+    "supabase_write_failed": "レポートを保存できませんでした。再試行してください。",
+    "audit_stream_truncated": "接続が中断されました。再試行してください。",
+    "audit_no_stream": "サーバーから応答がありませんでした。再試行してください。"
   },
   "report": {
     "title": "コンプライアンス監査レポート",

@@ -91,6 +91,22 @@
     "terms": "AGB",
     "dpa": "AVV"
   },
+  "errors": {
+    "generic": "Etwas ist schiefgelaufen. Bitte erneut versuchen.",
+    "document_required": "Bitte zuerst ein Dokument hochladen.",
+    "document_too_large": "Das Dokument überschreitet das 25 MB-Limit.",
+    "invalid_metadata": "Die Audit-Formularfelder sind unvollständig oder ungültig.",
+    "rate_limited": "Zu viele Audits in kurzer Zeit — bitte warten und erneut versuchen.",
+    "no_credits": "Ihre Audit-Credits sind aufgebraucht. Bitte wählen Sie einen Plan.",
+    "credit_check_failed": "Audit-Credits konnten nicht geprüft werden. Bitte erneut versuchen.",
+    "extraction_failed": "Das Dokument konnte nicht gelesen werden. Bei eingescannten PDFs bitte OCR ausführen und erneut versuchen.",
+    "anthropic_error": "Die Compliance-Engine ist vorübergehend nicht verfügbar. Bitte erneut versuchen.",
+    "openai_error": "Die Übersetzungs-Engine ist vorübergehend nicht verfügbar. Bitte erneut versuchen.",
+    "multipass_failed": "Die Audit-Pipeline hatte ein unerwartetes Problem. Bitte erneut versuchen.",
+    "supabase_write_failed": "Der Bericht konnte nicht gespeichert werden. Bitte erneut versuchen.",
+    "audit_stream_truncated": "Die Verbindung wurde unterbrochen. Bitte erneut versuchen.",
+    "audit_no_stream": "Der Server hat keine Antwort gesendet. Bitte erneut versuchen."
+  },
   "report": {
     "title": "Compliance-Auditbericht",
     "generatedOn": "Erstellt von LexyFlow am {date}.",

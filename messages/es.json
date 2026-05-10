@@ -91,6 +91,22 @@
     "terms": "Términos",
     "dpa": "DPA"
   },
+  "errors": {
+    "generic": "Algo salió mal. Por favor reinténtalo en un momento.",
+    "document_required": "Por favor sube un documento primero.",
+    "document_too_large": "El documento supera el límite de 25 MB.",
+    "invalid_metadata": "Los campos del formulario de auditoría están incompletos o son inválidos.",
+    "rate_limited": "Demasiadas auditorías en poco tiempo — espera y reinténtalo.",
+    "no_credits": "Te has quedado sin créditos de auditoría. Elige un plan para continuar.",
+    "credit_check_failed": "No pudimos verificar tus créditos de auditoría. Reinténtalo.",
+    "extraction_failed": "No pudimos leer este documento. Si es un PDF escaneado, ejecuta OCR e inténtalo de nuevo.",
+    "anthropic_error": "El motor de cumplimiento no está disponible temporalmente. Reinténtalo.",
+    "openai_error": "El motor de traducción no está disponible temporalmente. Reinténtalo.",
+    "multipass_failed": "El pipeline de auditoría tuvo un problema inesperado. Reinténtalo.",
+    "supabase_write_failed": "No pudimos guardar el informe. Reinténtalo.",
+    "audit_stream_truncated": "La conexión se interrumpió. Reinténtalo.",
+    "audit_no_stream": "El servidor no envió respuesta. Reinténtalo."
+  },
   "report": {
     "title": "Informe de auditoría de cumplimiento",
     "generatedOn": "Generado por LexyFlow el {date}.",

@@ -91,6 +91,22 @@
     "terms": "Termos",
     "dpa": "DPA"
   },
+  "errors": {
+    "generic": "Algo deu errado. Tente novamente em instantes.",
+    "document_required": "Envie um documento primeiro.",
+    "document_too_large": "O documento excede o limite de 25 MB.",
+    "invalid_metadata": "Os campos do formulário de auditoria estão incompletos ou inválidos.",
+    "rate_limited": "Muitas auditorias em curto período — aguarde e tente novamente.",
+    "no_credits": "Seus créditos de auditoria acabaram. Escolha um plano para continuar.",
+    "credit_check_failed": "Não foi possível verificar seus créditos. Tente novamente.",
+    "extraction_failed": "Não foi possível ler este documento. Se for um PDF escaneado, execute OCR e tente novamente.",
+    "anthropic_error": "O motor de conformidade está temporariamente indisponível. Tente novamente.",
+    "openai_error": "O motor de tradução está temporariamente indisponível. Tente novamente.",
+    "multipass_failed": "A pipeline de auditoria teve um problema inesperado. Tente novamente.",
+    "supabase_write_failed": "Não foi possível salvar o relatório. Tente novamente.",
+    "audit_stream_truncated": "A conexão foi interrompida. Tente novamente.",
+    "audit_no_stream": "O servidor não enviou resposta. Tente novamente."
+  },
   "report": {
     "title": "Relatório de auditoria de conformidade",
     "generatedOn": "Gerado pelo LexyFlow em {date}.",

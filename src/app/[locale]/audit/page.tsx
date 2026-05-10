@@ -1,5 +1,5 @@
 import { ShieldCheck } from 'lucide-react';
-import { getTranslations, unstable_setRequestLocale } from 'next-intl/server';
+import { getMessages, getTranslations, unstable_setRequestLocale } from 'next-intl/server';
 import { AuditForm } from '@/components/AuditForm';
 import { buildAuditFormLabels } from '@/lib/audit-labels';
 import { FRAMEWORKS } from '@/lib/legal-frameworks';
@@ -22,6 +22,11 @@ export default async function AuditPage({ params: { locale } }: PageProps) {
   const user = await getCurrentUser();
   const orgId = (user && organizationIdFromUser(user)) ?? ANONYMOUS_ORG_ID;
 
+  // Pass the full errors namespace as a flat dict so the client
+  // component can do labels.errors[code] without a server round-trip.
+  const messages = (await getMessages()) as unknown as { errors?: Record<string, string> };
+  const errorMessages = messages.errors ?? {};
+
   return (
     <div className="mx-auto grid max-w-2xl gap-10 px-4 py-16 md:px-0">
       <header className="grid gap-2">
@@ -35,7 +40,7 @@ export default async function AuditPage({ params: { locale } }: PageProps) {
       </header>
 
       <AuditForm
-        labels={buildAuditFormLabels(t)}
+        labels={buildAuditFormLabels(t, errorMessages)}
         frameworks={FRAMEWORKS.map((f) => ({ id: f.id, name: f.name }))}
         defaultLanguage={locale}
         organizationId={orgId}

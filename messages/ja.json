@@ -60,7 +60,31 @@
     "framework": "法的フレームワーク",
     "submit": "監査を実行",
     "running": "LexyFlow が監査中 — 通常 1 分以内に完了します。",
-    "zeroKnowledge": "Zero-Knowledge：レポート生成後、ドキュメントはディスクとメモリから即座に削除されます。"
+    "zeroKnowledge": "Zero-Knowledge：レポート生成後、ドキュメントはディスクとメモリから即座に削除されます。",
+    "processing": {
+      "queued": "キューに登録済み — ドキュメントを準備中。",
+      "running": "監査中 — 通常 1 分以内に完了します。",
+      "auditId": "監査ID：{id}",
+      "phases": [
+        "ドキュメントを読み込み中…",
+        "条項を抽出中…",
+        "選択されたフレームワークへの準拠を確認中…",
+        "法的条文と照合中…",
+        "所見を作成中…",
+        "レポートをローカライズ中…"
+      ]
+    },
+    "completed": {
+      "title": "監査完了",
+      "riskScore": "リスクスコア",
+      "findingsCount": "所見数",
+      "openReport": "レポートを開く →"
+    },
+    "failed": {
+      "title": "監査失敗",
+      "tryAgain": "再試行",
+      "timeout": "監査が通常より時間がかかっています。再試行してください。"
+    }
   },
   "footer": {
     "copyright": "© {year} LexyFlow. All rights reserved.",

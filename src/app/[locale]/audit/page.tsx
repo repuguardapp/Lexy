@@ -1,6 +1,7 @@
 import { ShieldCheck } from 'lucide-react';
 import { getTranslations, unstable_setRequestLocale } from 'next-intl/server';
 import { AuditForm } from '@/components/AuditForm';
+import { buildAuditFormLabels } from '@/lib/audit-labels';
 import { FRAMEWORKS } from '@/lib/legal-frameworks';
 import { getCurrentUser, organizationIdFromUser } from '@/lib/supabase-server';
 
@@ -22,7 +23,7 @@ export default async function AuditPage({ params: { locale } }: PageProps) {
   const orgId = (user && organizationIdFromUser(user)) ?? ANONYMOUS_ORG_ID;
 
   return (
-    <div className="mx-auto grid max-w-2xl gap-10 py-16">
+    <div className="mx-auto grid max-w-2xl gap-10 px-4 py-16 md:px-0">
       <header className="grid gap-2">
         <h1 className="text-balance text-3xl font-semibold tracking-tight md:text-4xl">
           {t('upload')}
@@ -34,15 +35,7 @@ export default async function AuditPage({ params: { locale } }: PageProps) {
       </header>
 
       <AuditForm
-        labels={{
-          upload: t('upload'),
-          uploadHint: t('uploadHint'),
-          targetLanguage: t('targetLanguage'),
-          targetLanguageHint: t('targetLanguageHint'),
-          framework: t('framework'),
-          submit: t('submit'),
-          running: t('running')
-        }}
+        labels={buildAuditFormLabels(t)}
         frameworks={FRAMEWORKS.map((f) => ({ id: f.id, name: f.name }))}
         defaultLanguage={locale}
         organizationId={orgId}

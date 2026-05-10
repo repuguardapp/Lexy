@@ -10,7 +10,14 @@ interface FrameworkOption {
   name: string;
 }
 
-interface Labels {
+/**
+ * All UX strings for the audit lifecycle. Pulled from `messages/*.json`
+ * via the audit/page server component and passed in as a single object
+ * — no string is hardcoded in this client component, so the same
+ * bundle ships to every locale without divergence.
+ */
+export interface AuditFormLabels {
+  // Form
   upload: string;
   uploadHint: string;
   targetLanguage: string;
@@ -18,10 +25,33 @@ interface Labels {
   framework: string;
   submit: string;
   running: string;
+
+  // Processing card
+  processing: {
+    queued: string;
+    running: string;
+    auditId: string;          // ICU template with {id}
+    phases: readonly string[]; // rotated every PHASE_INTERVAL_MS
+  };
+
+  // Success card
+  completed: {
+    title: string;
+    riskScore: string;
+    findingsCount: string;
+    openReport: string;
+  };
+
+  // Failure card
+  failed: {
+    title: string;
+    tryAgain: string;
+    timeout: string;
+  };
 }
 
 interface Props {
-  labels: Labels;
+  labels: AuditFormLabels;
   frameworks: FrameworkOption[];
   defaultLanguage: string;
   /** Stamped from the server-rendered page so we don't trust the client. */
@@ -44,6 +74,7 @@ const POLL_INTERVAL_MS = 2_000;
 // roughly one timer fire per minute, which used to make a finished
 // audit look like a timeout when the user switched apps mid-run.
 const POLL_TIMEOUT_MS  = 10 * 60 * 1_000;
+const PHASE_INTERVAL_MS = 4_500;
 
 /**
  * Audit form + async progress UI.
@@ -56,7 +87,7 @@ export function AuditForm({ labels, frameworks, defaultLanguage, organizationId 
   const [view, setView] = useState<View>({ phase: 'idle' });
 
   if (view.phase === 'tracking' || view.phase === 'completed' || view.phase === 'failed') {
-    return <ProgressPanel view={view} />;
+    return <ProgressPanel view={view} labels={labels} />;
   }
 
   async function onSubmit(event: React.FormEvent<HTMLFormElement>) {
@@ -127,7 +158,13 @@ export function AuditForm({ labels, frameworks, defaultLanguage, organizationId 
 /* Progress panel                                                     */
 /* ------------------------------------------------------------------ */
 
-function ProgressPanel({ view }: { view: Extract<View, { phase: 'tracking' | 'completed' | 'failed' }> }) {
+function ProgressPanel({
+  view,
+  labels
+}: {
+  view: Extract<View, { phase: 'tracking' | 'completed' | 'failed' }>;
+  labels: AuditFormLabels;
+}) {
   const [current, setCurrent] = useState(view);
   const startedAt = useRef<number>(Date.now());
 
@@ -158,7 +195,7 @@ function ProgressPanel({ view }: { view: Extract<View, { phase: 'tracking' | 'co
           return;
         }
         if (Date.now() - startedAt.current > POLL_TIMEOUT_MS) {
-          setCurrent({ phase: 'failed', message: 'timeout' });
+          setCurrent({ phase: 'failed', message: labels.failed.timeout });
           return;
         }
 
@@ -202,11 +239,11 @@ function ProgressPanel({ view }: { view: Extract<View, { phase: 'tracking' | 'co
       <div className="grid gap-4 rounded-lg border border-destructive/30 bg-destructive/5 p-6">
         <div className="flex items-center gap-3">
           <XCircle className="h-5 w-5 text-destructive" aria-hidden />
-          <div className="font-medium">Audit failed</div>
+          <div className="font-medium">{labels.failed.title}</div>
         </div>
-        <p className="text-sm text-muted-foreground">{current.message}</p>
+        <p className="text-sm text-muted-foreground break-words">{current.message}</p>
         <Button variant="outline" onClick={() => window.location.reload()}>
-          Try again
+          {labels.failed.tryAgain}
         </Button>
       </div>
     );
@@ -217,46 +254,90 @@ function ProgressPanel({ view }: { view: Extract<View, { phase: 'tracking' | 'co
       <div className="grid gap-4 rounded-lg border border-green-500/30 bg-green-500/5 p-6">
         <div className="flex items-center gap-3">
           <CheckCircle2 className="h-5 w-5 text-green-600" aria-hidden />
-          <div className="font-medium">Audit complete</div>
+          <div className="font-medium">{labels.completed.title}</div>
         </div>
         <div className="grid grid-cols-2 gap-4 text-sm">
           <div>
-            <div className="text-xs uppercase tracking-wider text-muted-foreground">Risk score</div>
+            <div className="text-xs uppercase tracking-wider text-muted-foreground">
+              {labels.completed.riskScore}
+            </div>
             <div className="mt-1 text-2xl font-semibold tabular-nums">
               {current.riskScore ?? '—'}/100
             </div>
           </div>
           <div>
-            <div className="text-xs uppercase tracking-wider text-muted-foreground">Findings</div>
+            <div className="text-xs uppercase tracking-wider text-muted-foreground">
+              {labels.completed.findingsCount}
+            </div>
             <div className="mt-1 text-2xl font-semibold tabular-nums">{current.findingsCount}</div>
           </div>
         </div>
         <Button asChild>
-          <a href={`../dashboard/${current.auditId}`}>Open the report →</a>
+          <a href={`../dashboard/${current.auditId}`}>{labels.completed.openReport}</a>
         </Button>
       </div>
     );
   }
 
+  return <RunningCard auditId={current.auditId} status={current.status} labels={labels} />;
+}
+
+/* ------------------------------------------------------------------ */
+/* Running card with animated phase rotation                          */
+/* ------------------------------------------------------------------ */
+
+function RunningCard({
+  auditId,
+  status,
+  labels
+}: {
+  auditId: string;
+  status: AuditStatus;
+  labels: AuditFormLabels;
+}) {
+  const phases = labels.processing.phases;
+  const [phaseIndex, setPhaseIndex] = useState(0);
+
+  // Rotate phrases every PHASE_INTERVAL_MS for a feeling of progress.
+  // The rotation is purely cosmetic — it does not reflect actual
+  // backend stages because the server-side pipeline is opaque to the
+  // client (we only see status='pending' or 'running' on poll).
+  useEffect(() => {
+    if (phases.length <= 1) return;
+    const t = setInterval(() => {
+      setPhaseIndex((i) => (i + 1) % phases.length);
+    }, PHASE_INTERVAL_MS);
+    return () => clearInterval(t);
+  }, [phases.length]);
+
+  const headline =
+    status === 'pending' ? labels.processing.queued : labels.processing.running;
+  const subPhase = phases[phaseIndex] ?? '';
+  const auditLabel = labels.processing.auditId.replace('{id}', auditId.slice(0, 8));
+
   return (
     <div className="grid gap-4 rounded-lg border bg-muted/30 p-6">
       <div className="flex items-center gap-3">
         <Loader2 className="h-5 w-5 animate-spin text-muted-foreground" aria-hidden />
-        <div className="font-medium">
-          {current.status === 'pending' && 'Queued — preparing the document.'}
-          {current.status === 'running' && 'Auditing — this usually takes under a minute.'}
-        </div>
+        <div className="font-medium">{headline}</div>
+      </div>
+      <div
+        key={phaseIndex}
+        className="text-sm text-muted-foreground motion-safe:animate-in motion-safe:fade-in motion-safe:duration-500"
+        aria-live="polite"
+      >
+        {subPhase}
       </div>
       <div className="h-1.5 overflow-hidden rounded-full bg-muted">
         <div
           className={cn(
             'h-full bg-foreground transition-all',
-            current.status === 'pending' ? 'w-1/3' : 'w-2/3 animate-pulse'
+            status === 'pending' ? 'w-1/3' : 'w-2/3 animate-pulse'
           )}
         />
       </div>
       <p className="text-xs text-muted-foreground">
-        Audit id: <code className="font-mono">{current.auditId.slice(0, 8)}</code>
+        <code className="font-mono">{auditLabel}</code>
       </p>
     </div>
   );

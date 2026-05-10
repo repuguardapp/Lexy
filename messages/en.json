@@ -60,7 +60,31 @@
     "framework": "Legal framework",
     "submit": "Run audit",
     "running": "LexyFlow is auditing — this usually takes under a minute.",
-    "zeroKnowledge": "Zero-Knowledge: your document is wiped from disk and memory once the report is rendered."
+    "zeroKnowledge": "Zero-Knowledge: your document is wiped from disk and memory once the report is rendered.",
+    "processing": {
+      "queued": "Queued — preparing the document.",
+      "running": "Auditing — this usually takes under a minute.",
+      "auditId": "Audit id: {id}",
+      "phases": [
+        "Reading the document…",
+        "Extracting clauses…",
+        "Checking compliance against the selected frameworks…",
+        "Cross-referencing legal articles…",
+        "Drafting findings…",
+        "Localizing the report…"
+      ]
+    },
+    "completed": {
+      "title": "Audit complete",
+      "riskScore": "Risk score",
+      "findingsCount": "Findings",
+      "openReport": "Open the report →"
+    },
+    "failed": {
+      "title": "Audit failed",
+      "tryAgain": "Try again",
+      "timeout": "The audit is taking longer than usual. Please retry."
+    }
   },
   "footer": {
     "copyright": "© {year} LexyFlow. All rights reserved.",

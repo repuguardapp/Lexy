@@ -60,7 +60,31 @@
     "framework": "Marco legal",
     "submit": "Executar auditoria",
     "running": "LexyFlow está auditando — geralmente leva menos de um minuto.",
-    "zeroKnowledge": "Zero-Knowledge: seu documento é apagado do disco e da memória assim que o relatório é gerado."
+    "zeroKnowledge": "Zero-Knowledge: seu documento é apagado do disco e da memória assim que o relatório é gerado.",
+    "processing": {
+      "queued": "Na fila — preparando o documento.",
+      "running": "Auditando — geralmente leva menos de um minuto.",
+      "auditId": "ID da auditoria: {id}",
+      "phases": [
+        "Lendo o documento…",
+        "Extraindo cláusulas…",
+        "Verificando conformidade com os marcos selecionados…",
+        "Cruzando com os artigos legais…",
+        "Redigindo as constatações…",
+        "Localizando o relatório…"
+      ]
+    },
+    "completed": {
+      "title": "Auditoria concluída",
+      "riskScore": "Pontuação de risco",
+      "findingsCount": "Constatações",
+      "openReport": "Abrir o relatório →"
+    },
+    "failed": {
+      "title": "Auditoria falhou",
+      "tryAgain": "Tentar novamente",
+      "timeout": "A auditoria está demorando mais do que o normal. Tente novamente."
+    }
   },
   "footer": {
     "copyright": "© {year} LexyFlow. Todos os direitos reservados.",

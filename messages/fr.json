@@ -60,7 +60,31 @@
     "framework": "Référentiel juridique",
     "submit": "Lancer l'audit",
     "running": "LexyFlow audite — cela prend généralement moins d'une minute.",
-    "zeroKnowledge": "Zero-Knowledge : votre document est effacé du disque et de la mémoire dès le rapport rendu."
+    "zeroKnowledge": "Zero-Knowledge : votre document est effacé du disque et de la mémoire dès le rapport rendu.",
+    "processing": {
+      "queued": "En file d'attente — préparation du document.",
+      "running": "Audit en cours — cela prend généralement moins d'une minute.",
+      "auditId": "Identifiant d'audit : {id}",
+      "phases": [
+        "Lecture du document…",
+        "Extraction des clauses…",
+        "Vérification de la conformité aux référentiels sélectionnés…",
+        "Recoupement avec les articles juridiques…",
+        "Rédaction des constatations…",
+        "Localisation du rapport…"
+      ]
+    },
+    "completed": {
+      "title": "Audit terminé",
+      "riskScore": "Score de risque",
+      "findingsCount": "Constatations",
+      "openReport": "Ouvrir le rapport →"
+    },
+    "failed": {
+      "title": "Audit échoué",
+      "tryAgain": "Réessayer",
+      "timeout": "L'audit prend plus de temps que prévu. Veuillez réessayer."
+    }
   },
   "footer": {
     "copyright": "© {year} LexyFlow. Tous droits réservés.",

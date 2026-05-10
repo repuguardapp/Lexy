@@ -60,7 +60,31 @@
     "framework": "Rechtsrahmen",
     "submit": "Audit ausführen",
     "running": "LexyFlow prüft — üblicherweise unter einer Minute.",
-    "zeroKnowledge": "Zero-Knowledge: Ihr Dokument wird nach dem Rendern des Berichts aus Speicher und Festplatte gelöscht."
+    "zeroKnowledge": "Zero-Knowledge: Ihr Dokument wird nach dem Rendern des Berichts aus Speicher und Festplatte gelöscht.",
+    "processing": {
+      "queued": "In der Warteschlange — Dokument wird vorbereitet.",
+      "running": "Audit läuft — üblicherweise unter einer Minute.",
+      "auditId": "Audit-ID: {id}",
+      "phases": [
+        "Dokument wird gelesen…",
+        "Klauseln werden extrahiert…",
+        "Konformität mit ausgewählten Rechtsrahmen wird geprüft…",
+        "Abgleich mit Rechtsartikeln…",
+        "Feststellungen werden formuliert…",
+        "Bericht wird lokalisiert…"
+      ]
+    },
+    "completed": {
+      "title": "Audit abgeschlossen",
+      "riskScore": "Risiko-Score",
+      "findingsCount": "Feststellungen",
+      "openReport": "Bericht öffnen →"
+    },
+    "failed": {
+      "title": "Audit fehlgeschlagen",
+      "tryAgain": "Erneut versuchen",
+      "timeout": "Das Audit dauert länger als gewöhnlich. Bitte erneut versuchen."
+    }
   },
   "footer": {
     "copyright": "© {year} LexyFlow. Alle Rechte vorbehalten.",

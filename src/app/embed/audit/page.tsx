@@ -4,6 +4,7 @@ import { getMessages, getTranslations, unstable_setRequestLocale } from 'next-in
 import { AuditForm } from '@/components/AuditForm';
 import { EmbedAutosize } from '@/components/EmbedAutosize';
 import { DEFAULT_LOCALE, getLocaleDescriptor, isNativeLocale } from '@/i18n/locales';
+import { buildAuditFormLabels } from '@/lib/audit-labels';
 import { FRAMEWORKS, type FrameworkId } from '@/lib/legal-frameworks';
 import '@/app/globals.css';
 
@@ -65,15 +66,7 @@ export default async function EmbedAuditPage({ searchParams }: PageProps) {
             </header>
 
             <AuditForm
-              labels={{
-                upload: t('upload'),
-                uploadHint: t('uploadHint'),
-                targetLanguage: t('targetLanguage'),
-                targetLanguageHint: t('targetLanguageHint'),
-                framework: t('framework'),
-                submit: t('submit'),
-                running: t('running')
-              }}
+              labels={buildAuditFormLabels(t)}
               frameworks={
                 preselect.length > 0
                   ? FRAMEWORKS.filter((f) => preselect.includes(f.id)).map((f) => ({ id: f.id, name: f.name }))

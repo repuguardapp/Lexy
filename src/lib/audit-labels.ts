@@ -26,7 +26,6 @@ export function buildAuditFormLabels(t: Translator): AuditFormLabels {
     processing: {
       queued: t('processing.queued'),
       running: t('processing.running'),
-      auditId: t('processing.auditId'),
       phases: t.raw('processing.phases') as readonly string[]
     },
     completed: {

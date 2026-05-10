@@ -114,6 +114,15 @@ export async function POST(request: Request) {
         ? { code: error.code, message: error.message, details: error.details, hint: error.hint }
         : 'no row returned'
     });
+    // We already debited a credit before the insert; the customer must
+    // not lose it for an internal failure. The function is a no-op for
+    // the anonymous org so this is safe to call unconditionally.
+    const { error: refundErr } = await db.rpc('refund_audit_credit', {
+      p_org_id: meta.organizationId
+    });
+    if (refundErr) {
+      console.error('[audit/async] refund_failed_after_insert_error:', refundErr);
+    }
     return NextResponse.json(
       { error: 'persistence_failed', detail: error?.message ?? 'no row' },
       { status: 500 }

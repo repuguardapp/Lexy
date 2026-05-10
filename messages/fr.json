@@ -64,7 +64,6 @@
     "processing": {
       "queued": "En file d'attente — préparation du document.",
       "running": "Audit en cours — cela prend généralement moins d'une minute.",
-      "auditId": "Identifiant d'audit : {id}",
       "phases": [
         "Lecture du document…",
         "Extraction des clauses…",

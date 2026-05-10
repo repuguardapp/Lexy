@@ -64,7 +64,6 @@
     "processing": {
       "queued": "En cola — preparando el documento.",
       "running": "Auditando — suele tardar menos de un minuto.",
-      "auditId": "ID de auditoría: {id}",
       "phases": [
         "Leyendo el documento…",
         "Extrayendo cláusulas…",

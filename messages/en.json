@@ -64,7 +64,6 @@
     "processing": {
       "queued": "Queued — preparing the document.",
       "running": "Auditing — this usually takes under a minute.",
-      "auditId": "Audit id: {id}",
       "phases": [
         "Reading the document…",
         "Extracting clauses…",

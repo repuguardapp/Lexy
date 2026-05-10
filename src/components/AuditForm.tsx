@@ -30,7 +30,6 @@ export interface AuditFormLabels {
   processing: {
     queued: string;
     running: string;
-    auditId: string;          // ICU template with {id}
     phases: readonly string[]; // rotated every PHASE_INTERVAL_MS
   };
 
@@ -181,17 +180,35 @@ function ProgressPanel({
   useEffect(() => {
     if (current.phase !== 'tracking') return;
 
-    let cancelled = false;
+    // `stopped` is the single source of truth for "do not poll any
+    // more". setInterval ticks live outside React's render cycle, so
+    // an in-flight tick that fires the moment we transition to
+    // completed used to issue one or two extra GETs before useEffect
+    // could clean up the timer. Each branch below now flips the flag
+    // AND clears the interval directly, so the very next tick can't
+    // race us.
+    let stopped = false;
+    let timer: ReturnType<typeof setInterval> | null = null;
+    const stop = () => {
+      stopped = true;
+      if (timer !== null) {
+        clearInterval(timer);
+        timer = null;
+      }
+    };
+
     const auditId = current.auditId;
 
     async function poll() {
+      if (stopped) return;
       try {
         const res = await fetch(`/api/audit/${auditId}`, { cache: 'no-store' });
         if (!res.ok) throw new Error(`poll_${res.status}`);
         const body = await res.json();
-        if (cancelled) return;
+        if (stopped) return;
 
         if (body.status === 'completed') {
+          stop();
           setCurrent({
             phase: 'completed',
             auditId,
@@ -201,10 +218,12 @@ function ProgressPanel({
           return;
         }
         if (body.status === 'failed') {
+          stop();
           setCurrent({ phase: 'failed', message: body.error ?? 'audit_failed' });
           return;
         }
         if (Date.now() - startedAt.current > POLL_TIMEOUT_MS) {
+          stop();
           setCurrent({ phase: 'failed', message: labels.failed.timeout });
           return;
         }
@@ -217,7 +236,8 @@ function ProgressPanel({
           riskScore: body.riskScore ?? null
         });
       } catch (err) {
-        if (cancelled) return;
+        if (stopped) return;
+        stop();
         setCurrent({
           phase: 'failed',
           message: err instanceof Error ? err.message : String(err)
@@ -225,7 +245,7 @@ function ProgressPanel({
       }
     }
 
-    const t = setInterval(poll, POLL_INTERVAL_MS);
+    timer = setInterval(poll, POLL_INTERVAL_MS);
     void poll();
 
     // iOS Safari (and most mobile browsers) throttle setInterval down to
@@ -233,13 +253,12 @@ function ProgressPanel({
     // audit that finished while the tab was hidden would not be
     // discovered until the user manually refreshed.
     const onVisible = () => {
-      if (document.visibilityState === 'visible') void poll();
+      if (!stopped && document.visibilityState === 'visible') void poll();
     };
     document.addEventListener('visibilitychange', onVisible);
 
     return () => {
-      cancelled = true;
-      clearInterval(t);
+      stop();
       document.removeEventListener('visibilitychange', onVisible);
     };
   }, [current.phase === 'tracking' ? current.auditId : null]); // eslint-disable-line react-hooks/exhaustive-deps
@@ -289,7 +308,7 @@ function ProgressPanel({
     );
   }
 
-  return <RunningCard auditId={current.auditId} status={current.status} labels={labels} />;
+  return <RunningCard status={current.status} labels={labels} />;
 }
 
 /* ------------------------------------------------------------------ */
@@ -297,11 +316,9 @@ function ProgressPanel({
 /* ------------------------------------------------------------------ */
 
 function RunningCard({
-  auditId,
   status,
   labels
 }: {
-  auditId: string;
   status: AuditStatus;
   labels: AuditFormLabels;
 }) {
@@ -323,7 +340,6 @@ function RunningCard({
   const headline =
     status === 'pending' ? labels.processing.queued : labels.processing.running;
   const subPhase = phases[phaseIndex] ?? '';
-  const auditLabel = labels.processing.auditId.replace('{id}', auditId.slice(0, 8));
 
   return (
     <div className="grid gap-4 rounded-lg border bg-muted/30 p-6">
@@ -346,9 +362,6 @@ function RunningCard({
           )}
         />
       </div>
-      <p className="text-xs text-muted-foreground">
-        <code className="font-mono">{auditLabel}</code>
-      </p>
     </div>
   );
 }

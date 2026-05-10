@@ -60,10 +60,32 @@ export async function POST(request: Request) {
     );
   }
 
+  const db = supabaseService();
+
+  // Credit gate. The SQL function is atomic, so two concurrent
+  // submissions on the same org with `credits_remaining = 1` cannot
+  // both succeed — exactly one will get the row, the other gets a 402.
+  // Anonymous-org runs bypass this server-side (see migration 0007).
+  const { data: consumed, error: creditErr } = await db.rpc('try_consume_audit_credit', {
+    p_org_id: meta.organizationId
+  });
+  if (creditErr) {
+    console.error('[audit/async] credit_check_failed:', creditErr);
+    return NextResponse.json(
+      { error: 'credit_check_failed', detail: creditErr.message },
+      { status: 500 }
+    );
+  }
+  if (!consumed) {
+    return NextResponse.json(
+      { error: 'no_credits', redirect: '/pricing' },
+      { status: 402 }
+    );
+  }
+
   const buffer = Buffer.from(await file.arrayBuffer());
   const filename = file instanceof File ? file.name : undefined;
   const mime = file.type || undefined;
-  const db = supabaseService();
 
   // Unique per-attempt placeholder so retries do not collide on the
   // (organization_id, document_hash, language) unique index. Replaced
@@ -160,6 +182,15 @@ export async function POST(request: Request) {
           .from('audits')
           .update({ status: 'failed', error_message: message })
           .eq('id', pending.id);
+        // Refund the credit — a failed audit (timeout, malformed model
+        // output, persistence error) shouldn't cost the customer. The
+        // SQL function is a no-op for the anonymous org.
+        const { error: refundErr } = await db.rpc('refund_audit_credit', {
+          p_org_id: meta.organizationId
+        });
+        if (refundErr) {
+          console.error('[audit/async] refund_failed:', { auditId: pending.id, refundErr });
+        }
       } finally {
         wipeBuffer(buffer);
       }

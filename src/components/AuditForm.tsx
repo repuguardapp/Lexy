@@ -97,6 +97,16 @@ export function AuditForm({ labels, frameworks, defaultLanguage, organizationId 
     const form = new FormData(event.currentTarget);
     try {
       const res = await fetch('/api/audit/async', { method: 'POST', body: form });
+
+      // 402 Payment Required: server says the org is out of audit
+      // credits. Body carries the relative path to /pricing — we honour
+      // it instead of treating this as a failure card.
+      if (res.status === 402) {
+        const body = (await res.json().catch(() => ({}))) as { redirect?: string };
+        window.location.assign(body.redirect ?? '/pricing');
+        return;
+      }
+
       if (!res.ok) {
         const body = await res.json().catch(() => ({}));
         throw new Error(body.error ?? `audit_failed_${res.status}`);

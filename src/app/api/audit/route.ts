@@ -257,6 +257,40 @@ export async function POST(request: Request) {
         .single();
 
       if (insertErr || !audit) {
+        // PG 23505 = unique violation. Our audits_dedup_idx enforces
+        // (organization_id, document_hash, language) uniqueness, so
+        // hitting this means the exact same audit (same org, same
+        // bytes, same target language) already exists. Idempotent
+        // retry: surface the existing row instead of failing, and
+        // refund the credit because we re-ran the AI for nothing.
+        if (insertErr?.code === '23505') {
+          const { data: existing, error: lookupErr } = await db
+            .from('audits')
+            .select('id, risk_score')
+            .eq('organization_id', meta.organizationId)
+            .eq('document_hash', report.documentHash)
+            .eq('language', report.language)
+            .maybeSingle();
+
+          if (existing && !lookupErr) {
+            log('idempotent_replay', { auditId: existing.id });
+            await refundIfNeeded('idempotent_replay');
+            const { count: existingFindingsCount } = await db
+              .from('audit_findings')
+              .select('*', { count: 'exact', head: true })
+              .eq('audit_id', existing.id);
+            finish({
+              ok: true,
+              auditId: existing.id,
+              riskScore: existing.risk_score,
+              findingsCount: existingFindingsCount ?? 0,
+              redirect: `/dashboard/${existing.id}`,
+              replay: true
+            });
+            return;
+          }
+        }
+
         log('supabase_write_failed', {
           code: insertErr?.code,
           message: insertErr?.message,

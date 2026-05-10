@@ -89,7 +89,8 @@
   "footer": {
     "copyright": "© {year} LexyFlow. Todos los derechos reservados.",
     "privacy": "Privacidad",
-    "terms": "Términos"
+    "terms": "Términos",
+    "dpa": "DPA"
   },
   "report": {
     "title": "Informe de auditoría de cumplimiento",

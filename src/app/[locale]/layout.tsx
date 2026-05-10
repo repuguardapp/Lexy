@@ -88,9 +88,10 @@ export default async function LocaleLayout({ children, params: { locale } }: Lay
           <footer className="border-t">
             <div className="container flex flex-col items-center justify-between gap-3 py-8 text-sm text-muted-foreground sm:flex-row">
               <span>{tFooter('copyright', { year: new Date().getFullYear() })}</span>
-              <div className="flex gap-6">
+              <div className="flex flex-wrap gap-6">
                 <Link href="/privacy" className="hover:text-foreground">{tFooter('privacy')}</Link>
                 <Link href="/terms" className="hover:text-foreground">{tFooter('terms')}</Link>
+                <Link href="/dpa" className="hover:text-foreground">{tFooter('dpa')}</Link>
               </div>
             </div>
           </footer>

@@ -89,7 +89,8 @@
   "footer": {
     "copyright": "© {year} LexyFlow. Alle Rechte vorbehalten.",
     "privacy": "Datenschutz",
-    "terms": "AGB"
+    "terms": "AGB",
+    "dpa": "AVV"
   },
   "report": {
     "title": "Compliance-Auditbericht",

@@ -186,30 +186,59 @@ export async function POST(request: Request) {
   const stream = new ReadableStream<Uint8Array>({
     async start(controller) {
       const enc = new TextEncoder();
-      const heartbeat = setInterval(() => {
+
+      /**
+       * Stream wire format: newline-delimited JSON (NDJSON).
+       *   {"type":"progress","progress":10,"stage":"upload"}\n
+       *   {"type":"progress","progress":30,"stage":"extraction"}\n
+       *   {"type":"progress","progress":60,"stage":"analysis"}\n
+       *   {"type":"progress","progress":90,"stage":"writing"}\n
+       *   {"type":"final","ok":true,...}\n
+       *
+       * The client parses one JSON object per line. Progress events
+       * drive the UI bar; the final event is exactly one envelope and
+       * either redirects (ok:true) or shows the failure card (ok:false).
+       */
+      const send = (payload: Record<string, unknown>) => {
         try {
-          // Plain space — valid JSON whitespace, gets ignored by the
-          // parser. Comments would also work but are non-standard.
-          controller.enqueue(enc.encode(' '));
+          controller.enqueue(enc.encode(JSON.stringify(payload) + '\n'));
         } catch {
           // controller is closed — nothing to do.
+        }
+      };
+
+      const progress = (pct: number, stage: string) => {
+        send({ type: 'progress', progress: pct, stage });
+      };
+
+      // Heartbeat keeps iOS Safari from aborting on idle if a stage
+      // genuinely takes >60s (Multi-Pass on a large doc). Plain space
+      // fits between NDJSON lines without confusing the parser
+      // (line-by-line readers skip empty lines).
+      const heartbeat = setInterval(() => {
+        try {
+          controller.enqueue(enc.encode(' \n'));
+        } catch {
+          /* controller closed */
         }
       }, 10_000);
 
       const finish = (payload: Record<string, unknown>) => {
         clearInterval(heartbeat);
-        try {
-          controller.enqueue(enc.encode(JSON.stringify(payload)));
-        } finally {
-          controller.close();
-        }
+        send({ type: 'final', ...payload });
+        controller.close();
       };
 
-      // Extract
+      // Stage 1: upload received (we're already past the Buffer copy).
+      progress(10, 'upload');
+
+      // Stage 2: extraction
+      progress(20, 'extraction_start');
       let extracted;
       try {
         extracted = await extractText(buffer, { filename, mime });
         log('extracted', { type: extracted.type, charCount: extracted.charCount, redactionCount: extracted.redactionCount });
+        progress(35, 'extraction_done');
       } catch (err) {
         wipeBuffer(buffer);
         await refundIfNeeded('extraction_failed');
@@ -217,7 +246,8 @@ export async function POST(request: Request) {
         return;
       }
 
-      // Multi-Pass
+      // Stage 3: AI analysis (the longest phase — Multi-Pass)
+      progress(45, 'analysis_start');
       let report;
       try {
         log('multipass_start');
@@ -228,6 +258,7 @@ export async function POST(request: Request) {
         });
         report.documentHash = hashDocument(extracted.text);
         log('multipass_done', { findings: report.findings.length, riskScore: report.riskScore });
+        progress(85, 'analysis_done');
       } catch (err) {
         wipeBuffer(buffer);
         const { code, detail } = classifyAiError(err);
@@ -239,6 +270,9 @@ export async function POST(request: Request) {
 
       // Wipe as early as we can — Multi-Pass has consumed the text.
       wipeBuffer(buffer);
+
+      // Stage 4: writing — persistence to Postgres
+      progress(90, 'writing_start');
 
       // Persist audit row
       const { data: audit, error: insertErr } = await db
@@ -279,6 +313,7 @@ export async function POST(request: Request) {
               .from('audit_findings')
               .select('*', { count: 'exact', head: true })
               .eq('audit_id', existing.id);
+            progress(100, 'done');
             finish({
               ok: true,
               auditId: existing.id,
@@ -328,6 +363,7 @@ export async function POST(request: Request) {
       }
 
       log('done', { auditId: audit.id });
+      progress(100, 'done');
       finish({
         ok: true,
         auditId: audit.id,

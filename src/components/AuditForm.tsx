@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
 import { Loader2, XCircle } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
@@ -62,10 +62,8 @@ interface Props {
 
 type View =
   | { phase: 'idle' }
-  | { phase: 'running' }
+  | { phase: 'running'; progress: number }
   | { phase: 'failed'; message: string };
-
-const PHASE_INTERVAL_MS = 4_500;
 
 /**
  * Audit form — synchronous architecture.
@@ -90,14 +88,14 @@ const PHASE_INTERVAL_MS = 4_500;
 export function AuditForm({ labels, frameworks, defaultLanguage, organizationId }: Props) {
   const [view, setView] = useState<View>({ phase: 'idle' });
 
-  if (view.phase === 'running') return <RunningCard labels={labels} />;
+  if (view.phase === 'running') return <RunningCard progress={view.progress} labels={labels} />;
   if (view.phase === 'failed') {
     return <FailedCard message={view.message} labels={labels} />;
   }
 
   async function onSubmit(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
-    setView({ phase: 'running' });
+    setView({ phase: 'running', progress: 5 });
 
     const form = new FormData(event.currentTarget);
     try {
@@ -118,23 +116,54 @@ export function AuditForm({ labels, frameworks, defaultLanguage, organizationId 
         throw new Error(message);
       }
 
-      // Slow-path: 200 with a streamed envelope. The body has leading
-      // whitespace heartbeats — JSON.parse ignores them, so a plain
-      // .json() call works. The `ok` field discriminates success from
-      // a server-side failure that finished mid-stream.
-      const body = (await res.json()) as
-        | { ok: true; auditId: string; redirect: string }
-        | { ok: false; error: string; detail?: string };
+      // Slow-path: NDJSON stream. One JSON object per line:
+      //   {"type":"progress","progress":35,"stage":"extraction_done"}
+      //   {"type":"progress","progress":85,"stage":"analysis_done"}
+      //   ...
+      //   {"type":"final","ok":true,"redirect":"/dashboard/..."}
+      // Heartbeat lines are bare whitespace/empty — skipped.
+      if (!res.body) throw new Error('audit_no_stream');
+      const reader = res.body.getReader();
+      const decoder = new TextDecoder();
+      let buf = '';
 
-      if (body.ok) {
-        // Straight to the report — no intermediate "audit complete" card.
-        window.location.assign(body.redirect);
-        return;
+      while (true) {
+        const { done, value } = await reader.read();
+        if (done) break;
+        buf += decoder.decode(value, { stream: true });
+
+        let nl: number;
+        while ((nl = buf.indexOf('\n')) >= 0) {
+          const line = buf.slice(0, nl).trim();
+          buf = buf.slice(nl + 1);
+          if (!line) continue;
+
+          let evt: { type?: string; progress?: number; ok?: boolean; redirect?: string; error?: string; detail?: string };
+          try {
+            evt = JSON.parse(line);
+          } catch {
+            // Garbage line — extremely unlikely with our server, but
+            // we'd rather skip than crash the whole audit on it.
+            continue;
+          }
+
+          if (evt.type === 'progress' && typeof evt.progress === 'number') {
+            setView({ phase: 'running', progress: evt.progress });
+          } else if (evt.type === 'final') {
+            if (evt.ok && evt.redirect) {
+              window.location.assign(evt.redirect);
+              return;
+            }
+            const message = evt.detail
+              ? `${evt.error ?? 'audit_failed'}: ${evt.detail}`
+              : evt.error ?? 'audit_failed';
+            throw new Error(message);
+          }
+        }
       }
 
-      // ok === false: extract the structured server error.
-      const message = body.detail ? `${body.error}: ${body.detail}` : body.error;
-      throw new Error(message);
+      // Stream ended without a `final` event — the server died mid-flight.
+      throw new Error('audit_stream_truncated');
     } catch (err) {
       setView({ phase: 'failed', message: err instanceof Error ? err.message : String(err) });
     }
@@ -189,35 +218,22 @@ export function AuditForm({ labels, frameworks, defaultLanguage, organizationId 
 /* Running card — rotates phase strings purely client-side.           */
 /* ------------------------------------------------------------------ */
 
-function RunningCard({ labels }: { labels: AuditFormLabels }) {
+function RunningCard({ progress, labels }: { progress: number; labels: AuditFormLabels }) {
   const phases = labels.processing.phases;
-  const [phaseIndex, setPhaseIndex] = useState(0);
-  const [progress, setProgress] = useState(0);
 
-  // Rotate phrases every PHASE_INTERVAL_MS for a feeling of progress.
-  // The rotation is purely cosmetic — there is no server pulse driving
-  // it, the API is held open by the parent component's pending fetch.
-  useEffect(() => {
-    if (phases.length <= 1) return;
-    const t = setInterval(() => {
-      setPhaseIndex((i) => (i + 1) % phases.length);
-    }, PHASE_INTERVAL_MS);
-    return () => clearInterval(t);
-  }, [phases.length]);
+  // Map server-driven progress to the rotating phrase index. Each
+  // phase string covers an equal slice of the 0-100 range, so the
+  // visible phrase tracks real backend stages instead of a free-
+  // running client timer. With 6 phases: 0-16 = phrase 0,
+  // 17-33 = phrase 1, ..., 83-100 = phrase 5.
+  const idx = phases.length > 0
+    ? Math.min(phases.length - 1, Math.floor((progress / 100) * phases.length))
+    : 0;
+  const subPhase = phases[idx] ?? '';
 
-  // Animate the bar from 0% on mount up to ~92% over the expected
-  // audit duration (90s). After that we plateau and let the pulse
-  // animation carry the eye until the response lands. We don't reach
-  // 100% because that would feel "done" before the redirect fires.
-  useEffect(() => {
-    // Defer the first setState so the browser sees the 0% value
-    // commit, THEN transitions to the target. Without this the
-    // CSS `transition` doesn't kick in (start = end).
-    const start = setTimeout(() => setProgress(92), 50);
-    return () => clearTimeout(start);
-  }, []);
-
-  const subPhase = phases[phaseIndex] ?? '';
+  // Clamp to [5, 100] for visual stability — a 0% bar at startup
+  // looks broken; the server's first event lands at 10% in <1s.
+  const visualPct = Math.max(5, Math.min(100, progress));
 
   return (
     <div className="grid gap-4 rounded-lg border bg-muted/30 p-6">
@@ -226,7 +242,7 @@ function RunningCard({ labels }: { labels: AuditFormLabels }) {
         <div className="font-medium">{labels.processing.running}</div>
       </div>
       <div
-        key={phaseIndex}
+        key={idx}
         className="text-sm text-muted-foreground motion-safe:animate-in motion-safe:fade-in motion-safe:duration-500"
         aria-live="polite"
       >
@@ -234,14 +250,17 @@ function RunningCard({ labels }: { labels: AuditFormLabels }) {
       </div>
       <div className="h-1.5 overflow-hidden rounded-full bg-muted">
         <div
-          className={cn(
-            'h-full bg-foreground ease-out',
-            progress >= 92 ? 'animate-pulse' : ''
-          )}
+          className="h-full bg-foreground"
           style={{
-            width: `${progress}%`,
-            transition: 'width 90s linear'
+            width: `${visualPct}%`,
+            // Smooth catch-up between server events without overshooting
+            // — a 600ms ease-out feels responsive without looking jumpy.
+            transition: 'width 600ms cubic-bezier(0.16, 1, 0.3, 1)'
           }}
+          role="progressbar"
+          aria-valuemin={0}
+          aria-valuemax={100}
+          aria-valuenow={Math.round(visualPct)}
         />
       </div>
     </div>

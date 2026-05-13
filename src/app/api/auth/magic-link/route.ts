@@ -25,6 +25,21 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: 'invalid_request', detail: String(err) }, { status: 400 });
   }
 
+  // Hard-fail when the email pipeline is misconfigured server-side.
+  // The 503 lets the client render a "service temporarily unavailable"
+  // banner instead of a hopeful "check your inbox" — closes the "user
+  // waits in the void" failure mode the CEO flagged. These checks are
+  // cheap and never leak enumeration data (they're identical for every
+  // email).
+  if (!process.env.NEXT_PUBLIC_SUPABASE_URL || !process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY) {
+    console.error('[auth/magic-link] supabase_env_missing');
+    return NextResponse.json({ error: 'service_unavailable' }, { status: 503 });
+  }
+  if (!process.env.RESEND_API_KEY) {
+    console.error('[auth/magic-link] resend_env_missing');
+    return NextResponse.json({ error: 'service_unavailable' }, { status: 503 });
+  }
+
   const origin = request.headers.get('origin') ?? process.env.NEXT_PUBLIC_APP_URL ?? '';
   const supabase = createSupabaseServerClient();
 
@@ -38,8 +53,11 @@ export async function POST(request: Request) {
 
   if (error) {
     // Do NOT leak Supabase's error verbatim — that would let an attacker
-    // distinguish "email exists" vs "email valid". Always 200.
-    console.error('[auth/magic-link]', error.message);
+    // distinguish "email exists" vs "email valid". Always 200, log the
+    // detail for ops triage.
+    console.error('[auth/magic-link] otp_send_failed', error.message);
+  } else {
+    console.log('[auth/magic-link] otp_send_queued');
   }
 
   // Always 200 with a generic body so the client UI can show a uniform

@@ -95,6 +95,23 @@
     "terms": "Conditions",
     "dpa": "DPA"
   },
+  "auth": {
+    "signInTitle": "Connexion à LexyFlow",
+    "signInTagline": "Nous vous envoyons un lien magique par email. Aucun mot de passe à retenir.",
+    "emailLabel": "Email",
+    "emailPlaceholder": "vous@entreprise.com",
+    "submit": "Recevoir un lien magique",
+    "submitting": "Envoi en cours…",
+    "inboxTitle": "Vérifiez votre boîte mail",
+    "inboxBody": "Si votre email est enregistré (ou nouveau), nous venons d'envoyer un lien de connexion. Le lien est valide 60 minutes.",
+    "inboxRetry": "Vous ne l'avez pas reçu ? Renvoyer un lien",
+    "newHere": "Nouveau ici ?",
+    "newHereCta": "Lancer un audit",
+    "newHereSuffix": "d'abord — aucun compte nécessaire.",
+    "errorService": "Le service d'email est temporairement indisponible. Veuillez réessayer dans un instant.",
+    "errorRateLimited": "Trop de tentatives. Veuillez patienter avant de réessayer.",
+    "errorGeneric": "Une erreur est survenue. Veuillez réessayer."
+  },
   "onboarding": {
     "title": "Bienvenue chez LexyFlow.",
     "description": "Configuration en une étape. Parlez-nous de votre organisation pour qu'on choisisse les bons référentiels juridiques.",

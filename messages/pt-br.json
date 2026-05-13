@@ -95,6 +95,23 @@
     "terms": "Termos",
     "dpa": "DPA"
   },
+  "auth": {
+    "signInTitle": "Entrar no LexyFlow",
+    "signInTagline": "Enviamos um link mágico por email. Sem senha para lembrar.",
+    "emailLabel": "Email",
+    "emailPlaceholder": "voce@empresa.com",
+    "submit": "Receber um link mágico",
+    "submitting": "Enviando…",
+    "inboxTitle": "Confira sua caixa de entrada",
+    "inboxBody": "Se o seu email está cadastrado (ou é novo), acabamos de enviar um link de acesso. O link é válido por 60 minutos.",
+    "inboxRetry": "Não recebeu? Reenviar link",
+    "newHere": "Novo por aqui?",
+    "newHereCta": "Executar uma auditoria",
+    "newHereSuffix": "primeiro — sem conta necessária.",
+    "errorService": "O serviço de email está temporariamente indisponível. Tente novamente em instantes.",
+    "errorRateLimited": "Muitas tentativas. Aguarde um momento e tente novamente.",
+    "errorGeneric": "Algo deu errado. Tente novamente."
+  },
   "onboarding": {
     "title": "Bem-vindo ao LexyFlow.",
     "description": "Configuração única. Conte-nos sobre sua organização para que escolhamos os marcos legais certos.",

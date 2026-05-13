@@ -95,6 +95,23 @@
     "terms": "利用規約",
     "dpa": "DPA"
   },
+  "auth": {
+    "signInTitle": "LexyFlow にサインイン",
+    "signInTagline": "メールで魔法のリンクをお送りします。パスワードは不要です。",
+    "emailLabel": "メールアドレス",
+    "emailPlaceholder": "you@company.com",
+    "submit": "魔法のリンクを送信",
+    "submitting": "送信中…",
+    "inboxTitle": "メール受信箱をご確認ください",
+    "inboxBody": "ご登録のメール（または新規）であれば、サインインリンクを送信しました。リンクの有効期限は 60 分です。",
+    "inboxRetry": "届きませんか？再送信",
+    "newHere": "はじめての方は",
+    "newHereCta": "監査を実行",
+    "newHereSuffix": "から — アカウント不要です。",
+    "errorService": "メールサービスは一時的に利用できません。少し待って再試行してください。",
+    "errorRateLimited": "試行回数が多すぎます。少し待って再試行してください。",
+    "errorGeneric": "エラーが発生しました。再試行してください。"
+  },
   "onboarding": {
     "title": "LexyFlow へようこそ。",
     "description": "初回セットアップです。組織について教えてください。監査に最適な法的フレームワークを選定します。",

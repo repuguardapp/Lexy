@@ -95,6 +95,23 @@
     "terms": "Terms",
     "dpa": "DPA"
   },
+  "auth": {
+    "signInTitle": "Sign in to LexyFlow",
+    "signInTagline": "We'll email you a magic link. No password to remember.",
+    "emailLabel": "Email",
+    "emailPlaceholder": "you@company.com",
+    "submit": "Email me a magic link",
+    "submitting": "Sending…",
+    "inboxTitle": "Check your inbox",
+    "inboxBody": "If your email is registered (or new), we just sent a sign-in link. The link is valid for 60 minutes.",
+    "inboxRetry": "Didn't receive it? Send another link",
+    "newHere": "New here?",
+    "newHereCta": "Run an audit",
+    "newHereSuffix": "first — no account needed.",
+    "errorService": "The email service is temporarily unavailable. Please try again in a moment.",
+    "errorRateLimited": "Too many attempts. Please wait a moment and try again.",
+    "errorGeneric": "Something went wrong. Please try again."
+  },
   "onboarding": {
     "title": "Welcome to LexyFlow.",
     "description": "One-time setup. Tell us about your organisation so we can pick the right legal frameworks for your audits.",

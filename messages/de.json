@@ -95,6 +95,23 @@
     "terms": "AGB",
     "dpa": "AVV"
   },
+  "auth": {
+    "signInTitle": "Bei LexyFlow anmelden",
+    "signInTagline": "Wir senden Ihnen einen magischen Link per E-Mail. Kein Passwort nötig.",
+    "emailLabel": "E-Mail",
+    "emailPlaceholder": "sie@firma.com",
+    "submit": "Magischen Link per E-Mail erhalten",
+    "submitting": "Wird gesendet…",
+    "inboxTitle": "Bitte E-Mail-Posteingang prüfen",
+    "inboxBody": "Wenn Ihre E-Mail registriert (oder neu) ist, haben wir gerade einen Anmeldelink gesendet. Der Link ist 60 Minuten gültig.",
+    "inboxRetry": "Nicht erhalten? Neuen Link senden",
+    "newHere": "Neu hier?",
+    "newHereCta": "Audit starten",
+    "newHereSuffix": "zuerst — kein Konto nötig.",
+    "errorService": "Der E-Mail-Dienst ist vorübergehend nicht verfügbar. Bitte versuchen Sie es gleich erneut.",
+    "errorRateLimited": "Zu viele Versuche. Bitte warten Sie kurz und versuchen Sie es erneut.",
+    "errorGeneric": "Etwas ist schiefgelaufen. Bitte erneut versuchen."
+  },
   "onboarding": {
     "title": "Willkommen bei LexyFlow.",
     "description": "Einmalige Einrichtung. Erzählen Sie uns von Ihrer Organisation, damit wir die passenden Rechtsrahmen auswählen.",

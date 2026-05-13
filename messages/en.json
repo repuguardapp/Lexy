@@ -50,7 +50,11 @@
     "pro": { "name": "Pro", "tagline": "For scale-ups handling regulated data" },
     "enterprise": { "name": "Enterprise", "tagline": "For groups with multi-jurisdiction obligations" },
     "perMonth": "/ month",
-    "checkout": "Choose this plan"
+    "checkout": "Choose this plan",
+    "reasons": {
+      "no_credits": "You need audit credits to launch a new audit. Choose a plan below to top up.",
+      "signin_required": "Please sign in or create an account to subscribe."
+    }
   },
   "audit": {
     "upload": "Upload a document",

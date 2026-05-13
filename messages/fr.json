@@ -50,7 +50,11 @@
     "pro": { "name": "Pro", "tagline": "Pour les scale-ups manipulant des données réglementées" },
     "enterprise": { "name": "Enterprise", "tagline": "Pour les groupes multi-juridictions" },
     "perMonth": "/ mois",
-    "checkout": "Choisir cette offre"
+    "checkout": "Choisir cette offre",
+    "reasons": {
+      "no_credits": "Vous devez disposer de crédits d'audit pour en lancer un nouveau. Choisissez une offre ci-dessous pour recharger.",
+      "signin_required": "Veuillez vous connecter ou créer un compte pour souscrire."
+    }
   },
   "audit": {
     "upload": "Déposer un document",

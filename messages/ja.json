@@ -50,7 +50,11 @@
     "pro": { "name": "Pro", "tagline": "規制データを扱うスケールアップ向け" },
     "enterprise": { "name": "Enterprise", "tagline": "複数管轄を持つ企業グループ向け" },
     "perMonth": "/ 月",
-    "checkout": "このプランを選択"
+    "checkout": "このプランを選択",
+    "reasons": {
+      "no_credits": "新しい監査を実行するには監査クレジットが必要です。以下のプランから補充してください。",
+      "signin_required": "サインインまたはアカウント作成のうえ、購読してください。"
+    }
   },
   "audit": {
     "upload": "ドキュメントをアップロード",

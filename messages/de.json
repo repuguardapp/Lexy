@@ -50,7 +50,11 @@
     "pro": { "name": "Pro", "tagline": "Für Scale-ups mit regulierten Daten" },
     "enterprise": { "name": "Enterprise", "tagline": "Für Konzerne mit mehreren Jurisdiktionen" },
     "perMonth": "/ Monat",
-    "checkout": "Diesen Plan wählen"
+    "checkout": "Diesen Plan wählen",
+    "reasons": {
+      "no_credits": "Sie benötigen Audit-Credits, um ein neues Audit zu starten. Wählen Sie unten einen Plan zum Aufladen.",
+      "signin_required": "Bitte melden Sie sich an oder erstellen Sie ein Konto, um zu abonnieren."
+    }
   },
   "audit": {
     "upload": "Dokument hochladen",

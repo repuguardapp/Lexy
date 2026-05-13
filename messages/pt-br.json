@@ -50,7 +50,11 @@
     "pro": { "name": "Pro", "tagline": "Para scale-ups com dados regulados" },
     "enterprise": { "name": "Enterprise", "tagline": "Para grupos multi-jurisdição" },
     "perMonth": "/ mês",
-    "checkout": "Escolher este plano"
+    "checkout": "Escolher este plano",
+    "reasons": {
+      "no_credits": "Você precisa de créditos de auditoria para iniciar uma nova. Escolha um plano abaixo para recarregar.",
+      "signin_required": "Faça login ou crie uma conta para assinar."
+    }
   },
   "audit": {
     "upload": "Enviar um documento",

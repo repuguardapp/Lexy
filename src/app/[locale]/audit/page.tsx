@@ -1,8 +1,10 @@
 import { ShieldCheck } from 'lucide-react';
 import { getMessages, getTranslations, unstable_setRequestLocale } from 'next-intl/server';
+import { redirect } from 'next/navigation';
 import { AuditForm } from '@/components/AuditForm';
 import { buildAuditFormLabels } from '@/lib/audit-labels';
 import { FRAMEWORKS } from '@/lib/legal-frameworks';
+import { supabaseService } from '@/lib/supabase';
 import { getCurrentUser, organizationIdFromUser } from '@/lib/supabase-server';
 
 export const dynamic = 'force-dynamic';
@@ -11,16 +13,39 @@ interface PageProps {
   params: { locale: string };
 }
 
-// Anonymous-friendly fallback so the audit page also works for the trial
-// flow on the marketing site. Real users get their stamped org id.
-const ANONYMOUS_ORG_ID = '00000000-0000-0000-0000-000000000000';
-
 export default async function AuditPage({ params: { locale } }: PageProps) {
   unstable_setRequestLocale(locale);
   const t = await getTranslations('audit');
 
+  // Tri-state auth gate (CEO-mandated):
+  //   1. Not signed in           → /login?next=/{locale}/audit
+  //   2. Signed in, 0 credits    → /pricing?reason=no_credits
+  //   3. Signed in, has credits  → render the form
+  // The embed widget (/embed/audit) keeps the anonymous-org flow for
+  // third-party integrations — that path doesn't touch this page.
   const user = await getCurrentUser();
-  const orgId = (user && organizationIdFromUser(user)) ?? ANONYMOUS_ORG_ID;
+  if (!user) {
+    redirect(`/${locale}/login?next=/${locale}/audit`);
+  }
+  const orgId = organizationIdFromUser(user);
+  if (!orgId) {
+    redirect(`/${locale}/onboarding`);
+  }
+
+  // Read the credit balance directly from the org row. The audit
+  // endpoint will atomically re-check via try_consume_audit_credit
+  // anyway, but doing it here lets us redirect proactively with a
+  // friendly reason banner instead of dropping the user into the
+  // form only to see it 402 on submit.
+  const { data: org } = await supabaseService()
+    .from('organizations')
+    .select('credits_remaining')
+    .eq('id', orgId)
+    .maybeSingle();
+  const credits = (org as { credits_remaining?: number } | null)?.credits_remaining ?? 0;
+  if (credits <= 0) {
+    redirect(`/${locale}/pricing?reason=no_credits`);
+  }
 
   // Pass the full errors namespace as a flat dict so the client
   // component can do labels.errors[code] without a server round-trip.

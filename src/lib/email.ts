@@ -140,24 +140,63 @@ const MAGIC_BODY: Record<string, { lead: string; cta: string; safety: string }> 
 };
 
 export async function sendMagicLinkEmail(args: MagicLinkEmailArgs): Promise<void> {
+  // Structured logs around every code path so a missing magic-link
+  // email always tells us WHY in Vercel Runtime Logs:
+  //   - resend_disabled      → RESEND_API_KEY env var unset
+  //   - resend_sent          → success, includes Resend message id
+  //   - resend_send_failed   → Resend rejected the send (rate limit,
+  //                             domain not verified, recipient bounced,
+  //                             quota exceeded, etc.)
+  //   - resend_threw         → network / SDK crash
   try {
     const r = resend();
-    if (!r) return;
+    if (!r) {
+      console.warn('[email] magic_link resend_disabled (RESEND_API_KEY unset)', { to: redact(args.to) });
+      return;
+    }
 
     const locale = (args.locale ?? 'en').toLowerCase();
     const subject = MAGIC_SUBJECT[locale] ?? MAGIC_SUBJECT.en!;
     const body = MAGIC_BODY[locale] ?? MAGIC_BODY.en!;
 
-    await r.emails.send({
+    const { data, error } = await r.emails.send({
       from: FROM,
       to: args.to,
       subject,
       html: renderMagicLinkHtml({ link: args.link, body }),
       text: `${body.lead}\n\n${args.link}\n\n${body.safety}`
     });
+
+    if (error) {
+      // Resend returned a 4xx — domain not verified, recipient blocked,
+      // quota hit, etc. The Resend `name` field is the categorical
+      // code (e.g. "validation_error", "rate_limit_exceeded").
+      console.error('[email] magic_link resend_send_failed', {
+        to: redact(args.to),
+        locale,
+        resendErrorName: error.name,
+        resendErrorMessage: error.message
+      });
+      return;
+    }
+
+    console.log('[email] magic_link resend_sent', {
+      to: redact(args.to),
+      locale,
+      resendMessageId: data?.id ?? null
+    });
   } catch (err) {
-    console.error('[email] sendMagicLinkEmail failed', err);
+    const message = err instanceof Error ? err.message : String(err);
+    console.error('[email] magic_link resend_threw', { to: redact(args.to), error: message });
   }
+}
+
+/** Mask everything between the first character and the @ so logs don't
+ *  carry a user's full email. "alice@example.com" → "a***@example.com". */
+function redact(email: string): string {
+  const at = email.indexOf('@');
+  if (at <= 1) return email;
+  return `${email[0]}***${email.slice(at)}`;
 }
 
 /* ------------------------------------------------------------------ */

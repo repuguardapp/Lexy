@@ -7,6 +7,7 @@ import { getCurrentUser, organizationIdFromUser } from '@/lib/supabase-server';
 
 interface PageProps {
   params: { locale: string };
+  searchParams: { reason?: string };
 }
 
 export async function generateMetadata({ params }: PageProps) {
@@ -19,7 +20,7 @@ export async function generateMetadata({ params }: PageProps) {
 
 const PLANS = ['starter', 'pro', 'enterprise'] as const;
 
-export default async function PricingPage({ params: { locale } }: PageProps) {
+export default async function PricingPage({ params: { locale }, searchParams }: PageProps) {
   unstable_setRequestLocale(locale);
   const t = await getTranslations('pricing');
   const tNav = await getTranslations('nav');
@@ -30,6 +31,16 @@ export default async function PricingPage({ params: { locale } }: PageProps) {
   // org id so the webhook can credit the right account.
   const user = await getCurrentUser();
   const orgId = (user && organizationIdFromUser(user)) ?? undefined;
+
+  // Show a localized banner when the user was redirected here from a
+  // gated path (e.g. /audit when out of credits). The allowed reasons
+  // are hard-coded so a malicious `?reason=<xss>` can never reach the
+  // DOM untranslated.
+  const ALLOWED_REASONS = new Set(['no_credits', 'signin_required']);
+  const reason = searchParams.reason && ALLOWED_REASONS.has(searchParams.reason)
+    ? (searchParams.reason as 'no_credits' | 'signin_required')
+    : null;
+  const reasonMessage = reason ? t(`reasons.${reason}`) : null;
 
   const indicativePrices: Record<typeof PLANS[number], Record<string, number>> = {
     starter:    { USD: 49,  EUR: 45,  BRL: 249, JPY: 7_300, GBP: 39 },
@@ -49,6 +60,16 @@ export default async function PricingPage({ params: { locale } }: PageProps) {
         <h1 className="text-balance text-4xl font-semibold tracking-tight md:text-5xl">{t('title')}</h1>
         <p className="mt-3 text-pretty text-lg text-muted-foreground">{t('subtitle')}</p>
       </header>
+
+      {reasonMessage && (
+        <div
+          className="mx-auto mt-8 max-w-2xl rounded-lg border border-amber-500/30 bg-amber-500/10 px-4 py-3 text-sm text-amber-900 dark:text-amber-100"
+          role="status"
+          aria-live="polite"
+        >
+          {reasonMessage}
+        </div>
+      )}
 
       <div className="mt-12 grid gap-6 md:grid-cols-3">
         {PLANS.map((plan, index) => (

@@ -74,7 +74,8 @@ export default async function DashboardPage({
           </h1>
           <p className="mt-1 text-pretty text-muted-foreground">
             {t.rich('signedInAs', {
-              email: () => <span className="font-medium text-foreground">{user.email}</span>
+              email: user.email ?? '',
+              bold: (chunks) => <span className="font-medium text-foreground">{chunks}</span>
             })}
           </p>
         </div>

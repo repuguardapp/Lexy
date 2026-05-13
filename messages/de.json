@@ -91,6 +91,21 @@
     "terms": "AGB",
     "dpa": "AVV"
   },
+  "onboarding": {
+    "title": "Willkommen bei LexyFlow.",
+    "description": "Einmalige Einrichtung. Erzählen Sie uns von Ihrer Organisation, damit wir die passenden Rechtsrahmen auswählen.",
+    "signedInAs": "Angemeldet als <bold>{email}</bold>.",
+    "orgName": "Organisationsname",
+    "orgNamePlaceholder": "Acme GmbH",
+    "country": "Land",
+    "countryHint": "Bestimmt die Standard-Rechtsrahmen.",
+    "uiLocale": "Sprache der Oberfläche",
+    "reportLanguage": "Standardsprache der Berichte",
+    "reportLanguageHint": "Berichte verwenden diese Sprache standardmäßig; pro Audit überschreibbar.",
+    "reportLanguagePlaceholder": "de, en, ja, ar…",
+    "submit": "Organisation erstellen",
+    "submitting": "Wird eingerichtet…"
+  },
   "billing": {
     "successTitle": "Geschafft. Willkommen bei LexyFlow.",
     "successBody": "Ihr Abonnement ist aktiv. Stripe hat Ihnen die Quittung per E-Mail gesendet. Ihr Arbeitsbereich ist eingerichtet — gehen Sie zur Audit-Seite, um Ihr erstes Dokument hochzuladen.",
@@ -139,7 +154,7 @@
   },
   "dashboard": {
     "title": "Audits",
-    "signedInAs": "Angemeldet als {email}.",
+    "signedInAs": "Angemeldet als <bold>{email}</bold>.",
     "newAudit": "Neues Audit",
     "filterAll": "Alle",
     "openAudit": "Öffnen",

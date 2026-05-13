@@ -91,6 +91,21 @@
     "terms": "Conditions",
     "dpa": "DPA"
   },
+  "onboarding": {
+    "title": "Bienvenue chez LexyFlow.",
+    "description": "Configuration en une étape. Parlez-nous de votre organisation pour qu'on choisisse les bons référentiels juridiques.",
+    "signedInAs": "Connecté en tant que <bold>{email}</bold>.",
+    "orgName": "Nom de l'organisation",
+    "orgNamePlaceholder": "Acme SAS",
+    "country": "Pays",
+    "countryHint": "Détermine les référentiels juridiques par défaut.",
+    "uiLocale": "Langue de l'interface",
+    "reportLanguage": "Langue par défaut des rapports",
+    "reportLanguageHint": "Les rapports utilisent cette langue par défaut ; vous pouvez la modifier audit par audit.",
+    "reportLanguagePlaceholder": "fr, en, ja, ar…",
+    "submit": "Créer l'organisation",
+    "submitting": "Création en cours…"
+  },
   "billing": {
     "successTitle": "C'est confirmé. Bienvenue chez LexyFlow.",
     "successBody": "Votre abonnement est actif. Stripe vous a envoyé le reçu par email. Votre espace de travail est provisionné — rendez-vous sur la page d'audit pour déposer votre premier document.",
@@ -139,7 +154,7 @@
   },
   "dashboard": {
     "title": "Audits",
-    "signedInAs": "Connecté en tant que {email}.",
+    "signedInAs": "Connecté en tant que <bold>{email}</bold>.",
     "newAudit": "Nouvel audit",
     "filterAll": "Tous",
     "openAudit": "Ouvrir",

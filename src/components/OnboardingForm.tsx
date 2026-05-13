@@ -19,12 +19,55 @@ const COUNTRIES: Array<{ code: string; name: string }> = [
   { code: 'JP', name: 'Japan' }
 ];
 
+/**
+ * All UX strings the form renders. Built server-side by the onboarding
+ * page and passed in as a single object — keeps the client bundle free
+ * of next-intl and lets the same component ship to every locale without
+ * branching.
+ */
+export interface OnboardingLabels {
+  /** Raw ICU template with `<bold>{email}</bold>` — rendered locally. */
+  signedInAsTemplate: string;
+  orgName: string;
+  orgNamePlaceholder: string;
+  country: string;
+  countryHint: string;
+  uiLocale: string;
+  reportLanguage: string;
+  reportLanguageHint: string;
+  reportLanguagePlaceholder: string;
+  submit: string;
+  submitting: string;
+}
+
 interface Props {
   locale: string;
   userEmail: string;
+  labels: OnboardingLabels;
 }
 
-export function OnboardingForm({ locale, userEmail }: Props) {
+/**
+ * Render the signedInAs template manually. The string looks like
+ *   "Connecté en tant que <bold>{email}</bold>."
+ * We don't import next-intl on the client just for this single string —
+ * a single regex split + email substitution is enough.
+ */
+function renderSignedInAs(template: string, email: string) {
+  const withEmail = template.replace('{email}', email);
+  // Split on <bold>…</bold>. The result is [pre, inner, post].
+  const m = withEmail.match(/^(.*?)<bold>(.*?)<\/bold>(.*)$/s);
+  if (!m) return <>{withEmail}</>;
+  const [, pre, inner, post] = m;
+  return (
+    <>
+      {pre}
+      <span className="font-medium text-foreground">{inner}</span>
+      {post}
+    </>
+  );
+}
+
+export function OnboardingForm({ locale, userEmail, labels }: Props) {
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -63,22 +106,22 @@ export function OnboardingForm({ locale, userEmail }: Props) {
   return (
     <form onSubmit={onSubmit} className="grid gap-5">
       <p className="text-sm text-muted-foreground">
-        Signed in as <span className="font-medium text-foreground">{userEmail}</span>.
+        {renderSignedInAs(labels.signedInAsTemplate, userEmail)}
       </p>
 
-      <Field label="Organisation name">
+      <Field label={labels.orgName}>
         <input
           name="name"
           required
           minLength={2}
           maxLength={120}
           autoComplete="organization"
-          placeholder="Acme Inc."
+          placeholder={labels.orgNamePlaceholder}
           className={inputClass}
         />
       </Field>
 
-      <Field label="Country" hint="Drives the default legal frameworks.">
+      <Field label={labels.country} hint={labels.countryHint}>
         <select name="country" defaultValue="FR" required className={inputClass}>
           {COUNTRIES.map((c) => (
             <option key={c.code} value={c.code}>
@@ -88,7 +131,7 @@ export function OnboardingForm({ locale, userEmail }: Props) {
         </select>
       </Field>
 
-      <Field label="Interface language">
+      <Field label={labels.uiLocale}>
         <select name="uiLocale" defaultValue={locale} className={inputClass}>
           {NATIVE_LOCALES.map((l) => (
             <option key={l.code} value={l.code} lang={l.code}>
@@ -98,18 +141,18 @@ export function OnboardingForm({ locale, userEmail }: Props) {
         </select>
       </Field>
 
-      <Field label="Default report language" hint="Reports default to this; you can override per audit.">
+      <Field label={labels.reportLanguage} hint={labels.reportLanguageHint}>
         <input
           name="defaultReportLanguage"
           required
           defaultValue={locale}
-          placeholder="en, fr, ja, ar…"
+          placeholder={labels.reportLanguagePlaceholder}
           className={inputClass}
         />
       </Field>
 
       <Button type="submit" size="lg" disabled={submitting}>
-        {submitting ? 'Setting up…' : 'Create organisation'}
+        {submitting ? labels.submitting : labels.submit}
       </Button>
 
       {error && <p className="text-sm text-destructive">{error}</p>}

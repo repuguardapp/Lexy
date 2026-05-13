@@ -91,6 +91,21 @@
     "terms": "Terms",
     "dpa": "DPA"
   },
+  "onboarding": {
+    "title": "Welcome to LexyFlow.",
+    "description": "One-time setup. Tell us about your organisation so we can pick the right legal frameworks for your audits.",
+    "signedInAs": "Signed in as <bold>{email}</bold>.",
+    "orgName": "Organisation name",
+    "orgNamePlaceholder": "Acme Inc.",
+    "country": "Country",
+    "countryHint": "Drives the default legal frameworks.",
+    "uiLocale": "Interface language",
+    "reportLanguage": "Default report language",
+    "reportLanguageHint": "Reports default to this; you can override per audit.",
+    "reportLanguagePlaceholder": "en, fr, ja, ar…",
+    "submit": "Create organisation",
+    "submitting": "Setting up…"
+  },
   "billing": {
     "successTitle": "You're in. Welcome to LexyFlow.",
     "successBody": "Your subscription is active. Stripe has emailed your receipt. We've provisioned your workspace — head to the audit page to upload your first document.",
@@ -139,7 +154,7 @@
   },
   "dashboard": {
     "title": "Audits",
-    "signedInAs": "Signed in as {email}.",
+    "signedInAs": "Signed in as <bold>{email}</bold>.",
     "newAudit": "New audit",
     "filterAll": "All",
     "openAudit": "Open",

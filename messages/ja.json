@@ -91,6 +91,21 @@
     "terms": "利用規約",
     "dpa": "DPA"
   },
+  "onboarding": {
+    "title": "LexyFlow へようこそ。",
+    "description": "初回セットアップです。組織について教えてください。監査に最適な法的フレームワークを選定します。",
+    "signedInAs": "<bold>{email}</bold> としてログイン中。",
+    "orgName": "組織名",
+    "orgNamePlaceholder": "株式会社サンプル",
+    "country": "国",
+    "countryHint": "デフォルトの法的フレームワークを決定します。",
+    "uiLocale": "インターフェースの言語",
+    "reportLanguage": "レポートのデフォルト言語",
+    "reportLanguageHint": "レポートは既定でこの言語を使用します。監査ごとに上書き可能です。",
+    "reportLanguagePlaceholder": "ja, en, ar…",
+    "submit": "組織を作成",
+    "submitting": "セットアップ中…"
+  },
   "billing": {
     "successTitle": "完了しました。LexyFlow へようこそ。",
     "successBody": "サブスクリプションが有効になりました。Stripe から領収書をメールでお送りしました。ワークスペースの準備が整いましたので、監査ページから最初のドキュメントをアップロードしてください。",
@@ -139,7 +154,7 @@
   },
   "dashboard": {
     "title": "監査一覧",
-    "signedInAs": "{email} としてログイン中。",
+    "signedInAs": "<bold>{email}</bold> としてログイン中。",
     "newAudit": "新規監査",
     "filterAll": "すべて",
     "openAudit": "開く",

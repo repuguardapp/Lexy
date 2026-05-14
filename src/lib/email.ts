@@ -15,7 +15,23 @@ import { supabaseService } from './supabase';
  * must be verified in Resend (DNS records — see DEPLOY.md).
  */
 
-const FROM = 'LexyFlow <hello@lexyflow.com>';
+/**
+ * The address every email is sent FROM. Configurable per environment
+ * via RESEND_FROM so a deployment can change senders without a code
+ * push — useful when the custom domain isn't verified in Resend yet.
+ *
+ *   - In Vercel: RESEND_FROM = "LexyFlow <hello@lexyflow.com>"
+ *     once the lexyflow.com DNS records (SPF, DKIM) are propagated and
+ *     Resend marks the domain as Verified.
+ *   - Until then: leave RESEND_FROM unset. The fallback uses Resend's
+ *     sandbox domain `onboarding@resend.dev`, which is always
+ *     verified and never bounces — emails arrive with a slightly
+ *     less branded From but they DO arrive.
+ *
+ * Either way the human-readable name ("LexyFlow") sits on the left and
+ * the inbox shows "LexyFlow <hello@...>".
+ */
+const FROM = process.env.RESEND_FROM ?? 'LexyFlow <onboarding@resend.dev>';
 const APP_URL = () => process.env.NEXT_PUBLIC_APP_URL ?? 'https://lexyflow.com';
 
 let client: Resend | null = null;

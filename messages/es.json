@@ -131,6 +131,7 @@
     "successTitle": "Listo. Bienvenido a LexyFlow.",
     "successBody": "Tu suscripción está activa. Stripe te ha enviado el recibo por email. Tu espacio de trabajo está provisionado — ve a la página de auditoría para subir tu primer documento.",
     "successCta": "Lanzar mi primera auditoría",
+    "successDashboard": "Ir a mi panel",
     "successDocs": "Leer la documentación",
     "creditsAdded": "Créditos de auditoría añadidos a tu cuenta",
     "creditsAvailable": "{count, plural, one {# crédito disponible} other {# créditos disponibles}}",
@@ -186,6 +187,9 @@
     "failed": "Fallida",
     "emptyTitle": "Sin auditorías",
     "emptyBody": "Sube tu primer documento para ver los hallazgos aquí.",
-    "emptyCta": "Lanzar mi primera auditoría"
+    "emptyCta": "Lanzar mi primera auditoría",
+    "creditsAvailable": "{count, plural, one {# crédito de auditoría disponible} other {# créditos de auditoría disponibles}}",
+    "creditsLow": "Añade créditos para lanzar más auditorías",
+    "creditsTopUp": "Recargar"
   }
 }

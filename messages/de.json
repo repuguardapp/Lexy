@@ -131,6 +131,7 @@
     "successTitle": "Geschafft. Willkommen bei LexyFlow.",
     "successBody": "Ihr Abonnement ist aktiv. Stripe hat Ihnen die Quittung per E-Mail gesendet. Ihr Arbeitsbereich ist eingerichtet — gehen Sie zur Audit-Seite, um Ihr erstes Dokument hochzuladen.",
     "successCta": "Mein erstes Audit starten",
+    "successDashboard": "Zum Dashboard",
     "successDocs": "Dokumentation lesen",
     "creditsAdded": "Audit-Credits Ihrem Konto gutgeschrieben",
     "creditsAvailable": "{count, plural, one {# Credit verfügbar} other {# Credits verfügbar}}",
@@ -186,6 +187,9 @@
     "failed": "Fehlgeschlagen",
     "emptyTitle": "Noch keine Audits",
     "emptyBody": "Laden Sie Ihr erstes Dokument hoch, um Befunde zu sehen.",
-    "emptyCta": "Erstes Audit starten"
+    "emptyCta": "Erstes Audit starten",
+    "creditsAvailable": "{count, plural, one {# Audit-Credit verfügbar} other {# Audit-Credits verfügbar}}",
+    "creditsLow": "Credits aufladen, um weitere Audits zu starten",
+    "creditsTopUp": "Aufladen"
   }
 }

@@ -131,6 +131,7 @@
     "successTitle": "完了しました。LexyFlow へようこそ。",
     "successBody": "サブスクリプションが有効になりました。Stripe から領収書をメールでお送りしました。ワークスペースの準備が整いましたので、監査ページから最初のドキュメントをアップロードしてください。",
     "successCta": "最初の監査を実行",
+    "successDashboard": "ダッシュボードへ",
     "successDocs": "ドキュメントを読む",
     "creditsAdded": "監査クレジットがアカウントに追加されました",
     "creditsAvailable": "{count}クレジット利用可能",
@@ -186,6 +187,9 @@
     "failed": "失敗",
     "emptyTitle": "監査がありません",
     "emptyBody": "最初のドキュメントをアップロードすると、ここに指摘事項が表示されます。",
-    "emptyCta": "最初の監査を開始"
+    "emptyCta": "最初の監査を開始",
+    "creditsAvailable": "{count}監査クレジット利用可能",
+    "creditsLow": "クレジットを追加してさらに監査を実行",
+    "creditsTopUp": "チャージ"
   }
 }

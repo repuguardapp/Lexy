@@ -131,6 +131,7 @@
     "successTitle": "Tudo certo. Bem-vindo ao LexyFlow.",
     "successBody": "Sua assinatura está ativa. O Stripe te enviou o recibo por email. Seu espaço foi provisionado — vá para a página de auditoria e envie seu primeiro documento.",
     "successCta": "Executar minha primeira auditoria",
+    "successDashboard": "Ir para o painel",
     "successDocs": "Ler a documentação",
     "creditsAdded": "Créditos de auditoria adicionados à sua conta",
     "creditsAvailable": "{count, plural, one {# crédito disponível} other {# créditos disponíveis}}",
@@ -186,6 +187,9 @@
     "failed": "Falhou",
     "emptyTitle": "Sem auditorias",
     "emptyBody": "Envie seu primeiro documento para ver os achados aqui.",
-    "emptyCta": "Iniciar minha primeira auditoria"
+    "emptyCta": "Iniciar minha primeira auditoria",
+    "creditsAvailable": "{count, plural, one {# crédito de auditoria disponível} other {# créditos de auditoria disponíveis}}",
+    "creditsLow": "Adicione créditos para executar mais auditorias",
+    "creditsTopUp": "Recarregar"
   }
 }

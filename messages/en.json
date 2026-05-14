@@ -131,6 +131,7 @@
     "successTitle": "You're in. Welcome to LexyFlow.",
     "successBody": "Your subscription is active. Stripe has emailed your receipt. We've provisioned your workspace — head to the audit page to upload your first document.",
     "successCta": "Run my first audit",
+    "successDashboard": "Go to my dashboard",
     "successDocs": "Read the docs",
     "creditsAdded": "Audit credits added to your account",
     "creditsAvailable": "{count, plural, one {# credit available} other {# credits available}}",
@@ -186,6 +187,9 @@
     "failed": "Failed",
     "emptyTitle": "No audits yet",
     "emptyBody": "Drop your first document to see findings here.",
-    "emptyCta": "Run my first audit"
+    "emptyCta": "Run my first audit",
+    "creditsAvailable": "{count, plural, one {# audit credit available} other {# audit credits available}}",
+    "creditsLow": "Add credits to run more audits",
+    "creditsTopUp": "Top up"
   }
 }

@@ -47,7 +47,13 @@ export async function POST(request: Request) {
     email: body.email,
     options: {
       emailRedirectTo: `${origin}/api/auth/callback?next=/${body.locale}/dashboard`,
-      shouldCreateUser: true
+      shouldCreateUser: true,
+      // Stamp the locale in the user's metadata so the email hook can
+      // render the magic-link mail in the user's language on the very
+      // first request — without this, a fresh French signup gets the
+      // English fallback because metadata is empty until they finish
+      // onboarding.
+      data: { locale: body.locale }
     }
   });
 

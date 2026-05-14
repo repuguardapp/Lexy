@@ -91,7 +91,7 @@ export default async function BillingSuccessPage({
             <Link href="/audit">{t('successCta')}</Link>
           </Button>
           <Button asChild size="lg" variant="outline">
-            <Link href="/docs">{t('successDocs')}</Link>
+            <Link href="/dashboard">{t('successDashboard')}</Link>
           </Button>
         </div>
 

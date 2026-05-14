@@ -1,4 +1,4 @@
-import { ArrowUpRight, FileText, ShieldAlert } from 'lucide-react';
+import { ArrowUpRight, Coins, FileText, ShieldAlert } from 'lucide-react';
 import { getTranslations, unstable_setRequestLocale } from 'next-intl/server';
 import { redirect } from 'next/navigation';
 import { Link } from '@/i18n/navigation';
@@ -8,6 +8,7 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { FRAMEWORKS, type FrameworkId } from '@/lib/legal-frameworks';
+import { supabaseService } from '@/lib/supabase';
 import { createSupabaseServerClient, getCurrentUser, organizationIdFromUser } from '@/lib/supabase-server';
 
 export const dynamic = 'force-dynamic';
@@ -52,6 +53,21 @@ export default async function DashboardPage({
   const supabase = createSupabaseServerClient();
   const filterFramework = searchParams.framework;
 
+  // Read the credit balance once for the banner. Uses the service-role
+  // client (RLS-bypassing) so the org row resolves cleanly — RLS via
+  // the user-session client would also work here, but the row is the
+  // user's own org anyway and this keeps the read fast and explicit.
+  const orgId = organizationIdFromUser(user);
+  let credits = 0;
+  if (orgId) {
+    const { data: org } = await supabaseService()
+      .from('organizations')
+      .select('credits_remaining')
+      .eq('id', orgId)
+      .maybeSingle();
+    credits = (org as { credits_remaining?: number } | null)?.credits_remaining ?? 0;
+  }
+
   let query = supabase
     .from('audits')
     .select('id,document_hash,frameworks,status,risk_score,summary,language,created_at,completed_at')
@@ -87,6 +103,14 @@ export default async function DashboardPage({
           <SignOutButton label={tBilling('signOut')} />
         </div>
       </header>
+
+      <CreditsBanner
+        credits={credits}
+        availableLabel={t('creditsAvailable', { count: credits })}
+        lowLabel={t('creditsLow')}
+        topUpLabel={t('creditsTopUp')}
+        locale={locale}
+      />
 
       <FrameworkFilter active={filterFramework ?? null} locale={locale} allLabel={t('filterAll')} />
 
@@ -141,6 +165,53 @@ export default async function DashboardPage({
             </li>
           ))}
         </ul>
+      )}
+    </div>
+  );
+}
+
+/**
+ * Compact credit balance banner placed just under the header. Green
+ * when the org has credits, amber + "top up" CTA when the balance is
+ * zero — so a customer who just paid sees their new balance
+ * confirmed, and a customer running low gets a clear path to /pricing.
+ */
+function CreditsBanner({
+  credits,
+  availableLabel,
+  lowLabel,
+  topUpLabel,
+  locale
+}: {
+  credits: number;
+  availableLabel: string;
+  lowLabel: string;
+  topUpLabel: string;
+  locale: string;
+}) {
+  const isLow = credits <= 0;
+  return (
+    <div
+      className={
+        'mt-2 flex flex-wrap items-center justify-between gap-3 rounded-lg border px-4 py-3 text-sm ' +
+        (isLow
+          ? 'border-amber-500/30 bg-amber-500/10 text-amber-900 dark:text-amber-100'
+          : 'border-green-500/30 bg-green-500/5')
+      }
+    >
+      <div className="inline-flex items-center gap-2">
+        <Coins
+          className={'h-4 w-4 ' + (isLow ? 'text-amber-600 dark:text-amber-400' : 'text-green-600 dark:text-green-400')}
+          aria-hidden
+        />
+        <span className={isLow ? '' : 'font-medium text-foreground'}>
+          {isLow ? lowLabel : availableLabel}
+        </span>
+      </div>
+      {isLow && (
+        <Button asChild size="sm" variant="outline">
+          <a href={`/${locale}/pricing?reason=no_credits`}>{topUpLabel}</a>
+        </Button>
       )}
     </div>
   );

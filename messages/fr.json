@@ -132,6 +132,8 @@
     "successBody": "Votre abonnement est actif. Stripe vous a envoyé le reçu par email. Votre espace de travail est provisionné — rendez-vous sur la page d'audit pour déposer votre premier document.",
     "successCta": "Lancer mon premier audit",
     "successDocs": "Lire la documentation",
+    "creditsAdded": "Crédits d'audit ajoutés à votre compte",
+    "creditsAvailable": "{count, plural, one {# crédit disponible} other {# crédits disponibles}}",
     "manage": "Gérer la facturation",
     "manageOpening": "Ouverture…",
     "signOut": "Se déconnecter"

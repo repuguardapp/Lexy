@@ -132,6 +132,8 @@
     "successBody": "Tu suscripción está activa. Stripe te ha enviado el recibo por email. Tu espacio de trabajo está provisionado — ve a la página de auditoría para subir tu primer documento.",
     "successCta": "Lanzar mi primera auditoría",
     "successDocs": "Leer la documentación",
+    "creditsAdded": "Créditos de auditoría añadidos a tu cuenta",
+    "creditsAvailable": "{count, plural, one {# crédito disponible} other {# créditos disponibles}}",
     "manage": "Gestionar la facturación",
     "manageOpening": "Abriendo…",
     "signOut": "Cerrar sesión"

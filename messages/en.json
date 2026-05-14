@@ -132,6 +132,8 @@
     "successBody": "Your subscription is active. Stripe has emailed your receipt. We've provisioned your workspace — head to the audit page to upload your first document.",
     "successCta": "Run my first audit",
     "successDocs": "Read the docs",
+    "creditsAdded": "Audit credits added to your account",
+    "creditsAvailable": "{count, plural, one {# credit available} other {# credits available}}",
     "manage": "Manage billing",
     "manageOpening": "Opening…",
     "signOut": "Sign out"

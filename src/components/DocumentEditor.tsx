@@ -1,6 +1,6 @@
 'use client';
 
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { Loader2, Sparkles } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -29,6 +29,8 @@ export interface DocumentEditorLabels {
   emptyDocument: string;
   rewriteError: string;
   rewriteHint: string;
+  loadingDocument: string;
+  retainedNotice: string;
 }
 
 interface Props {
@@ -36,6 +38,9 @@ interface Props {
   targetLanguage: string;
   findings: EditorFinding[];
   labels: DocumentEditorLabels;
+  /** True when the server told us a retained ciphertext exists; the
+   *  editor will try to GET /api/audit/[id]/document on mount. */
+  hasRetainedDocument: boolean;
 }
 
 interface SuggestionState {
@@ -66,11 +71,40 @@ interface SuggestionState {
  *     is visually anchored next to its finding.
  *   - Track-changes view (before/after) in PDF export.
  */
-export function DocumentEditor({ auditId, targetLanguage, findings, labels }: Props) {
+export function DocumentEditor({ auditId, targetLanguage, findings, labels, hasRetainedDocument }: Props) {
   const [text, setText] = useState('');
+  const [loadingDoc, setLoadingDoc] = useState(hasRetainedDocument);
   const [suggestions, setSuggestions] = useState<Record<string, SuggestionState>>({});
 
   const wordCount = useMemo(() => text.trim().split(/\s+/).filter(Boolean).length, [text]);
+
+  // Pre-fill the textarea from the encrypted-at-rest document when the
+  // server told us one exists. Failures degrade gracefully into
+  // paste-mode (the user can still type/paste the source manually).
+  useEffect(() => {
+    if (!hasRetainedDocument) return;
+    let cancelled = false;
+    (async () => {
+      try {
+        const res = await fetch(`/api/audit/${auditId}/document`, { cache: 'no-store' });
+        if (!res.ok) {
+          if (!cancelled) setLoadingDoc(false);
+          return;
+        }
+        const body = (await res.json()) as { text?: string };
+        if (!cancelled && typeof body.text === 'string') {
+          setText(body.text);
+        }
+      } catch {
+        // Network or parse failure: fall back to paste-mode.
+      } finally {
+        if (!cancelled) setLoadingDoc(false);
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [auditId, hasRetainedDocument]);
 
   async function requestRewrite(finding: EditorFinding) {
     if (!text.trim()) return;
@@ -154,19 +188,29 @@ export function DocumentEditor({ auditId, targetLanguage, findings, labels }: Pr
   return (
     <div className="mt-8 grid gap-6 lg:grid-cols-[1fr_360px]">
       <section className="grid gap-3">
+        {hasRetainedDocument && (
+          <p className="rounded-md border border-emerald-200 bg-emerald-50 px-3 py-2 text-xs text-emerald-900 dark:border-emerald-900/40 dark:bg-emerald-950/30 dark:text-emerald-200">
+            {labels.retainedNotice}
+          </p>
+        )}
         <label className="grid gap-2">
           <span className="text-sm font-medium">{labels.pasteLabel}</span>
           <textarea
             value={text}
             onChange={(e) => setText(e.target.value)}
-            placeholder={labels.pastePlaceholder}
-            className="min-h-[60vh] resize-y rounded-md border border-input bg-background p-3 text-sm focus:outline-none focus:ring-2 focus:ring-ring"
+            placeholder={loadingDoc ? labels.loadingDocument : labels.pastePlaceholder}
+            disabled={loadingDoc}
+            className="min-h-[60vh] resize-y rounded-md border border-input bg-background p-3 text-sm focus:outline-none focus:ring-2 focus:ring-ring disabled:opacity-60"
             aria-label={labels.pasteLabel}
           />
         </label>
         <div className="flex flex-wrap items-center justify-between gap-3">
           <span className="text-xs text-muted-foreground">
-            {wordCount > 0 ? `${wordCount} words` : labels.emptyDocument}
+            {loadingDoc
+              ? labels.loadingDocument
+              : wordCount > 0
+                ? `${wordCount} words`
+                : labels.emptyDocument}
           </span>
           <Button onClick={downloadAsText} variant="outline" size="sm" disabled={!text.trim()}>
             {labels.downloadCta}

@@ -34,8 +34,8 @@
         "body": "LexyFlow audita en un idioma pivote canónico y luego localiza el informe en cualquier idioma BCP-47, conservando cada cita legal palabra por palabra."
       },
       "zeroKnowledge": {
-        "title": "Zero-Knowledge por diseño",
-        "body": "Tus documentos solo viven en memoria. Los buffers se ponen a cero en cada salida. Guardamos el informe, nunca tu fuente."
+        "title": "Cifrado en reposo por defecto",
+        "body": "Tus documentos se cifran en el servidor con AES-256-GCM mediante claves aisladas por organización, accesibles solo durante tus sesiones de edición y nunca usados para entrenar IA."
       },
       "global": {
         "title": "Global desde el primer día",
@@ -64,7 +64,7 @@
     "framework": "Marco legal",
     "submit": "Lanzar auditoría",
     "running": "LexyFlow está auditando — suele tardar menos de un minuto.",
-    "zeroKnowledge": "Zero-Knowledge: tu documento se borra del disco y de la memoria al renderizar el informe.",
+    "zeroKnowledge": "Cifrado en reposo: tu documento se conserva en AES-256-GCM y solo es accesible durante tus sesiones de edición.",
     "processing": {
       "queued": "En cola — preparando el documento.",
       "running": "Auditando — suele tardar menos de un minuto.",
@@ -191,7 +191,9 @@
     "downloadCta": "Descargar texto editado",
     "emptyDocument": "Pega texto para activar las correcciones.",
     "rewriteError": "Reescritura no disponible — intenta de nuevo.",
-    "rewriteHint": "Reescritura sugerida"
+    "rewriteHint": "Reescritura sugerida",
+    "loadingDocument": "Descifrando el documento…",
+    "retainedNotice": "Documento cargado desde el almacenamiento cifrado (AES-256-GCM). El texto solo salió del servidor en esta sesión."
   },
   "dashboard": {
     "title": "Auditorías",

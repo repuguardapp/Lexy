@@ -31,6 +31,7 @@ interface AuditDetailRow {
   id: string;
   organization_id: string;
   document_hash: string | null;
+  document_ciphertext: string | null;
   frameworks: string[];
   status: string;
   risk_score: number | null;
@@ -56,7 +57,7 @@ export default async function AuditDetailPage({ params }: PageProps) {
 
   const { data: audit } = await supabase
     .from('audits')
-    .select('id,organization_id,document_hash,frameworks,status,risk_score,summary,language,created_at,completed_at')
+    .select('id,organization_id,document_hash,document_ciphertext,frameworks,status,risk_score,summary,language,created_at,completed_at')
     .eq('id', params.auditId)
     .maybeSingle();
 
@@ -90,7 +91,7 @@ export default async function AuditDetailPage({ params }: PageProps) {
           </Link>
         </Button>
         <div className="flex items-center gap-2">
-          <Button asChild variant="outline" size="sm">
+          <Button asChild variant={a.document_ciphertext ? 'default' : 'outline'} size="sm">
             <Link href={`/dashboard/${params.auditId}/edit`}>
               <Pencil className="me-2 h-4 w-4" aria-hidden />
               {t('editDocument')}

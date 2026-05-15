@@ -45,12 +45,20 @@ export default async function AuditEditPage({ params }: PageProps) {
   const supabase = createSupabaseServerClient();
   const { data: audit } = await supabase
     .from('audits')
-    .select('id,organization_id,language,risk_score,summary')
+    .select('id,organization_id,language,risk_score,summary,document_ciphertext')
     .eq('id', params.auditId)
     .maybeSingle();
 
   if (!audit) notFound();
-  const a = audit as { id: string; organization_id: string; language: string; risk_score: number | null; summary: string | null };
+  const a = audit as {
+    id: string;
+    organization_id: string;
+    language: string;
+    risk_score: number | null;
+    summary: string | null;
+    document_ciphertext: string | null;
+  };
+  const hasRetainedDocument = a.document_ciphertext !== null;
 
   if (a.organization_id !== ANONYMOUS_ORG_ID) {
     const user = await getCurrentUser();
@@ -92,6 +100,7 @@ export default async function AuditEditPage({ params }: PageProps) {
         auditId={params.auditId}
         targetLanguage={a.language}
         findings={rows}
+        hasRetainedDocument={hasRetainedDocument}
         labels={{
           pasteLabel: t('pasteLabel'),
           pastePlaceholder: t('pastePlaceholder'),
@@ -103,7 +112,9 @@ export default async function AuditEditPage({ params }: PageProps) {
           downloadCta: t('downloadCta'),
           emptyDocument: t('emptyDocument'),
           rewriteError: t('rewriteError'),
-          rewriteHint: t('rewriteHint')
+          rewriteHint: t('rewriteHint'),
+          loadingDocument: t('loadingDocument'),
+          retainedNotice: t('retainedNotice')
         }}
       />
     </div>

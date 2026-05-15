@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import { z } from 'zod';
 import { extractText } from '@/lib/document-extractor';
+import { encryptDocument } from '@/lib/document-crypto';
 import { runMultiPassAudit } from '@/lib/multi-pass-engine';
 import { clientIpFrom, rateLimit } from '@/lib/rate-limit';
 import { supabaseService } from '@/lib/supabase';
@@ -289,11 +290,51 @@ export async function POST(request: Request) {
         return;
       }
 
-      // Wipe as early as we can — Multi-Pass has consumed the text.
-      wipeBuffer(buffer);
-
       // Stage 4: writing — persistence to Postgres
       progress(90, 'writing_start');
+
+      // Envelope-encrypt the extracted text iff the org has opted into
+      // retention (default true since migration 0009; the anonymous-org
+      // placeholder is forced to false there). On any crypto failure
+      // we proceed without retention — Zero-Knowledge fallback is
+      // strictly safer than a half-encrypted row.
+      const { data: orgRow } = await db
+        .from('organizations')
+        .select('retain_documents')
+        .eq('id', meta.organizationId)
+        .maybeSingle();
+      const retain = (orgRow as { retain_documents?: boolean } | null)?.retain_documents ?? false;
+
+      // Buffers are encoded as Postgres bytea hex literals (\\x…). The
+      // supabase-js JSON serializer doesn't natively know about Buffer,
+      // so doing the encoding ourselves is both explicit and portable.
+      const toBytea = (b: Buffer) => `\\x${b.toString('hex')}`;
+      let cryptoFields: {
+        document_ciphertext: string;
+        document_iv: string;
+        document_auth_tag: string;
+        document_encrypted_at: string;
+      } | null = null;
+      if (retain) {
+        try {
+          const enc = encryptDocument(extracted.text);
+          cryptoFields = {
+            document_ciphertext: toBytea(enc.ciphertext),
+            document_iv: toBytea(enc.iv),
+            document_auth_tag: toBytea(enc.authTag),
+            document_encrypted_at: new Date().toISOString()
+          };
+          log('document_encrypted', { bytes: enc.ciphertext.length });
+        } catch (err) {
+          log('encryption_skipped', { reason: err instanceof Error ? err.message : String(err) });
+        }
+      }
+
+      // Wipe as early as we can — Multi-Pass and (optionally) the
+      // encryption step have consumed the text. The extracted.text
+      // string itself is not in `buffer`; it'll be GC'd when this
+      // closure returns.
+      wipeBuffer(buffer);
 
       // Persist audit row
       const { data: audit, error: insertErr } = await db
@@ -306,7 +347,8 @@ export async function POST(request: Request) {
           risk_score: report.riskScore,
           summary: report.summary,
           language: report.language,
-          completed_at: report.generatedAt
+          completed_at: report.generatedAt,
+          ...(cryptoFields ?? {})
         })
         .select('id')
         .single();

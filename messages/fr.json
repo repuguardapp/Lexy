@@ -34,8 +34,8 @@
         "body": "LexyFlow analyse dans une langue pivot canonique, puis localise le rapport dans n'importe quelle langue BCP-47 en conservant chaque citation juridique mot pour mot."
       },
       "zeroKnowledge": {
-        "title": "Zero-Knowledge par construction",
-        "body": "Vos documents ne vivent qu'en mémoire. Les buffers sont remis à zéro à chaque sortie. Nous conservons le rapport, jamais votre source."
+        "title": "Chiffré au repos par défaut",
+        "body": "Vos documents sont chiffrés serveur en AES-256-GCM avec des clés isolées par organisation, accessibles uniquement pendant vos sessions d'édition, et jamais utilisés pour entraîner une IA."
       },
       "global": {
         "title": "Global dès le premier jour",
@@ -64,7 +64,7 @@
     "framework": "Référentiel juridique",
     "submit": "Lancer l'audit",
     "running": "LexyFlow audite — cela prend généralement moins d'une minute.",
-    "zeroKnowledge": "Zero-Knowledge : votre document est effacé du disque et de la mémoire dès le rapport rendu.",
+    "zeroKnowledge": "Chiffré au repos : votre document est conservé en AES-256-GCM et accessible uniquement pendant vos sessions d'édition.",
     "processing": {
       "queued": "En file d'attente — préparation du document.",
       "running": "Audit en cours — cela prend généralement moins d'une minute.",
@@ -191,7 +191,9 @@
     "downloadCta": "Télécharger le texte édité",
     "emptyDocument": "Collez du texte pour activer les corrections.",
     "rewriteError": "Réécriture indisponible — veuillez réessayer.",
-    "rewriteHint": "Réécriture suggérée"
+    "rewriteHint": "Réécriture suggérée",
+    "loadingDocument": "Déchiffrement du document…",
+    "retainedNotice": "Document chargé depuis le stockage chiffré (AES-256-GCM). Le texte n'a quitté le serveur que dans cette session."
   },
   "dashboard": {
     "title": "Audits",

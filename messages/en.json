@@ -34,8 +34,8 @@
         "body": "LexyFlow audits in a canonical pivot language, then localizes the report into any BCP-47 language while keeping every legal citation verbatim."
       },
       "zeroKnowledge": {
-        "title": "Zero-Knowledge by design",
-        "body": "Documents live in memory only. Buffers are zeroed on every exit path. We persist the AI report, never your source file."
+        "title": "Encrypted at rest by default",
+        "body": "Your documents are AES-256-GCM encrypted server-side with per-organization keys, accessible only during your edit sessions, and never used to train AI models."
       },
       "global": {
         "title": "Global from day one",
@@ -64,7 +64,7 @@
     "framework": "Legal framework",
     "submit": "Run audit",
     "running": "LexyFlow is auditing — this usually takes under a minute.",
-    "zeroKnowledge": "Zero-Knowledge: your document is wiped from disk and memory once the report is rendered.",
+    "zeroKnowledge": "Encrypted at rest: your document is stored AES-256-GCM encrypted and accessible only during your edit sessions.",
     "processing": {
       "queued": "Queued — preparing the document.",
       "running": "Auditing — this usually takes under a minute.",
@@ -191,7 +191,9 @@
     "downloadCta": "Download edited text",
     "emptyDocument": "Paste text to enable corrections.",
     "rewriteError": "Rewrite unavailable — please retry.",
-    "rewriteHint": "Suggested rewrite"
+    "rewriteHint": "Suggested rewrite",
+    "loadingDocument": "Decrypting document…",
+    "retainedNotice": "Document loaded from encrypted storage (AES-256-GCM). The text only left the server during this session."
   },
   "dashboard": {
     "title": "Audits",

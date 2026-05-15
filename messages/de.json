@@ -34,8 +34,8 @@
         "body": "LexyFlow prüft in einer kanonischen Pivot-Sprache und lokalisiert den Bericht in jede beliebige BCP-47-Sprache — Rechtszitate bleiben wortgenau erhalten."
       },
       "zeroKnowledge": {
-        "title": "Zero-Knowledge by Design",
-        "body": "Dokumente leben nur im Arbeitsspeicher. Buffer werden auf jedem Pfad genullt. Wir speichern den Bericht, niemals Ihre Quelle."
+        "title": "Standardmäßig verschlüsselt gespeichert",
+        "body": "Ihre Dokumente werden serverseitig mit AES-256-GCM und organisationsspezifischen Schlüsseln verschlüsselt — nur während Ihrer Bearbeitungssitzungen zugänglich und niemals zum KI-Training verwendet."
       },
       "global": {
         "title": "Von Tag eins global",
@@ -64,7 +64,7 @@
     "framework": "Rechtsrahmen",
     "submit": "Audit ausführen",
     "running": "LexyFlow prüft — üblicherweise unter einer Minute.",
-    "zeroKnowledge": "Zero-Knowledge: Ihr Dokument wird nach dem Rendern des Berichts aus Speicher und Festplatte gelöscht.",
+    "zeroKnowledge": "Verschlüsselt gespeichert: Ihr Dokument wird in AES-256-GCM aufbewahrt und ist nur während Ihrer Bearbeitungssitzungen zugänglich.",
     "processing": {
       "queued": "In der Warteschlange — Dokument wird vorbereitet.",
       "running": "Audit läuft — üblicherweise unter einer Minute.",
@@ -191,7 +191,9 @@
     "downloadCta": "Bearbeiteten Text herunterladen",
     "emptyDocument": "Text einfügen, um Korrekturen zu aktivieren.",
     "rewriteError": "Neuschreibung nicht verfügbar — bitte erneut versuchen.",
-    "rewriteHint": "Vorgeschlagene Neuschreibung"
+    "rewriteHint": "Vorgeschlagene Neuschreibung",
+    "loadingDocument": "Dokument wird entschlüsselt…",
+    "retainedNotice": "Dokument aus dem verschlüsselten Speicher geladen (AES-256-GCM). Der Text hat den Server nur in dieser Sitzung verlassen."
   },
   "dashboard": {
     "title": "Audits",

@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { Loader2, XCircle } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
@@ -253,9 +253,19 @@ function RunningCard({ progress, labels }: { progress: number; labels: AuditForm
     : 0;
   const subPhase = phases[idx] ?? '';
 
-  // Clamp to [5, 100] for visual stability — a 0% bar at startup
-  // looks broken; the server's first event lands at 10% in <1s.
-  const visualPct = Math.max(5, Math.min(100, progress));
+  // Smooth out the bar. The server emits discrete jumps (10 → 35 → 85),
+  // which feels janky as the bar leaps. We hold a `displayed` value
+  // that creeps continuously toward the target between events: when a
+  // new server event raises the target by N points, we animate over
+  // ~1.2s. The CSS `transition: width` does the heavy lifting; the
+  // useEffect just owns when to commit the new target.
+  const [displayed, setDisplayed] = useState(5);
+  useEffect(() => {
+    const target = Math.max(5, Math.min(100, progress));
+    // Defer one frame so the CSS transition fires (start === end skips it).
+    const t = setTimeout(() => setDisplayed(target), 16);
+    return () => clearTimeout(t);
+  }, [progress]);
 
   return (
     <div className="grid gap-4 rounded-lg border bg-muted/30 p-6">
@@ -274,15 +284,17 @@ function RunningCard({ progress, labels }: { progress: number; labels: AuditForm
         <div
           className="h-full bg-foreground"
           style={{
-            width: `${visualPct}%`,
-            // Smooth catch-up between server events without overshooting
-            // — a 600ms ease-out feels responsive without looking jumpy.
-            transition: 'width 600ms cubic-bezier(0.16, 1, 0.3, 1)'
+            width: `${displayed}%`,
+            // 1.2s ease-out covers the worst-case 35→85 server jump in
+            // a single smooth sweep that never feels frozen and never
+            // overshoots. Synchronised with the phase-text crossfade
+            // so the whole card moves as one unit between stages.
+            transition: 'width 1200ms cubic-bezier(0.22, 1, 0.36, 1)'
           }}
           role="progressbar"
           aria-valuemin={0}
           aria-valuemax={100}
-          aria-valuenow={Math.round(visualPct)}
+          aria-valuenow={Math.round(displayed)}
         />
       </div>
     </div>

@@ -180,6 +180,7 @@
     "title": "Auditorias",
     "signedInAs": "Conectado como <bold>{email}</bold>.",
     "newAudit": "Nova auditoria",
+    "buyCredits": "Comprar créditos",
     "filterAll": "Todos",
     "openAudit": "Abrir",
     "auditAt": "Auditoria · {date}",

@@ -180,6 +180,7 @@
     "title": "監査一覧",
     "signedInAs": "<bold>{email}</bold> としてログイン中。",
     "newAudit": "新規監査",
+    "buyCredits": "クレジット購入",
     "filterAll": "すべて",
     "openAudit": "開く",
     "auditAt": "監査 · {date}",

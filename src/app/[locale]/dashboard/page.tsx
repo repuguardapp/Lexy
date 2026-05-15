@@ -96,9 +96,18 @@ export default async function DashboardPage({
           </p>
         </div>
         <div className="flex items-center gap-2">
-          <Button asChild>
-            <Link href="/audit">{t('newAudit')}</Link>
-          </Button>
+          {/* Bouton morphique : à 0 crédit, on pointe directement vers
+              /pricing avec le motif explicite. Évite le flow déroutant
+              "click Nouvel audit → redirection silencieuse vers /pricing". */}
+          {credits > 0 ? (
+            <Button asChild>
+              <Link href="/audit">{t('newAudit')}</Link>
+            </Button>
+          ) : (
+            <Button asChild>
+              <a href={`/${locale}/pricing?reason=no_credits`}>{t('buyCredits')}</a>
+            </Button>
+          )}
           <ManageBillingButton label={tBilling('manage')} loadingLabel={tBilling('manageOpening')} />
           <SignOutButton label={tBilling('signOut')} />
         </div>

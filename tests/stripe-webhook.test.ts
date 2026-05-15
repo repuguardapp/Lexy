@@ -154,6 +154,42 @@ describe('Stripe webhook · idempotency', () => {
 });
 
 describe('Stripe webhook · subscription lifecycle dispatch', () => {
+  it('records checkout.session.completed by stamping stripe_customer_id on the org', async () => {
+    // This is the FIRST webhook event after a successful checkout.
+    // It carries client_reference_id (= org id we set at checkout creation)
+    // and customer (= the Stripe customer id). The handler stamps the
+    // customer id onto the org row so subsequent invoice.paid lookups
+    // can resolve through the subscription metadata.
+    const orgUpdateSpy: ReturnType<typeof vi.fn> = vi.fn((_payload: Record<string, unknown>) => ({
+      eq: vi.fn(async () => ({ error: null as DbErr }))
+    }));
+    tableHandlers.organizations = () => ({ update: orgUpdateSpy });
+
+    mockConstructEvent.mockReturnValue({
+      id: 'evt_checkout_1',
+      type: 'checkout.session.completed',
+      data: {
+        object: {
+          id: 'cs_test_abc',
+          client_reference_id: '00000000-0000-0000-0000-000000000001',
+          customer: 'cus_real_customer_id'
+        }
+      }
+    });
+
+    const res = await callHandler({ 'stripe-signature': 't=1,v1=ok' }, '{}');
+    expect(res.status).toBe(200);
+    expect(orgUpdateSpy).toHaveBeenCalledTimes(1);
+    const calls = orgUpdateSpy.mock.calls;
+    const firstCall = calls[0];
+    if (!firstCall) throw new Error('orgUpdateSpy was not called');
+    const updateArg = firstCall[0] as Record<string, unknown>;
+    expect(updateArg.stripe_customer_id).toBe('cus_real_customer_id');
+
+    // Restore the default handler so later tests aren't affected.
+    tableHandlers.organizations = () => ({ update: () => ({ eq: () => Promise.resolve({ error: null }) }) });
+  });
+
   it('routes customer.subscription.updated to subscriptions.upsert', async () => {
     mockConstructEvent.mockReturnValue({
       id: 'evt_sub_1',

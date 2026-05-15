@@ -282,6 +282,28 @@ describe('Stripe webhook · invoice.paid credit top-up', () => {
     });
   });
 
+  it('treats STRIPE_PRICE_BUSINESS as an alias for Enterprise (1000 credits)', async () => {
+    // The Stripe Product is sold under the marketing name 'Business'
+    // but maps to our canonical 'enterprise' plan internally. Same
+    // 1000-credit grant.
+    process.env.STRIPE_PRICE_BUSINESS = 'price_business_alias';
+    mockConstructEvent.mockReturnValue(invoicePaidEvent({ subscriptionId: 'sub_biz' }));
+    mockSubscriptionsRetrieve.mockResolvedValue(
+      fakeSubscription({ priceId: 'price_business_alias' })
+    );
+
+    const res = await callHandler({ 'stripe-signature': 't=1,v1=ok' }, '{}');
+    expect(res.status).toBe(200);
+
+    expect(mockRpc).toHaveBeenCalledTimes(1);
+    expect(mockRpc).toHaveBeenCalledWith('add_audit_credits', {
+      p_org_id: '00000000-0000-0000-0000-000000000001',
+      p_amount: 1000
+    });
+
+    delete process.env.STRIPE_PRICE_BUSINESS;
+  });
+
   it('skips the credit top-up when the invoice has no subscription field', async () => {
     // One-off invoices (e.g. manual charges) — nothing to credit.
     mockConstructEvent.mockReturnValue(invoicePaidEvent({ subscriptionId: null }));

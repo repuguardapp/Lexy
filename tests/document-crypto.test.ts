@@ -69,4 +69,52 @@ describe('document envelope crypto', () => {
     __resetKeyCacheForTests();
     expect(() => encryptDocument('x')).toThrow(/32 bytes/);
   });
+
+  /**
+   * End-to-end wire-format test. The audit route serializes the
+   * encrypted fields as Postgres bytea hex literals ('\\xHEX') before
+   * the INSERT; the decrypt endpoint reads them back as the same
+   * literals from PostgREST. This test simulates the full transit
+   * through that wire format without touching a real database.
+   */
+  it('round-trips through the Postgres bytea hex literal wire format', () => {
+    const plaintext = [
+      'PRIVACY POLICY',
+      'Article 1 — We collect: name, email, IP address.',
+      'Article 2 — Data is retained 24 months.',
+      'Article 3 — Third-party processors: Stripe, Anthropic, OpenAI.'
+    ].join('\n');
+
+    // 1. Audit-route encrypts
+    const enc = encryptDocument(plaintext);
+
+    // 2. Audit-route serializes to bytea hex literals
+    const toBytea = (b: Buffer) => `\\x${b.toString('hex')}`;
+    const rowOnWire = {
+      document_ciphertext: toBytea(enc.ciphertext),
+      document_iv: toBytea(enc.iv),
+      document_auth_tag: toBytea(enc.authTag)
+    };
+
+    // Sanity: PostgREST emits the same '\\x…' format on the way back,
+    // so what we'd insert is byte-identical to what we'd read.
+    expect(rowOnWire.document_iv.startsWith('\\x')).toBe(true);
+    expect(rowOnWire.document_iv.length - 2).toBe(12 * 2); // 12 bytes = 24 hex chars
+    expect(rowOnWire.document_auth_tag.length - 2).toBe(16 * 2);
+
+    // 3. Decrypt-endpoint parses bytea hex back to Buffers
+    const fromBytea = (hexLiteral: string) =>
+      Buffer.from(
+        hexLiteral.startsWith('\\x') ? hexLiteral.slice(2) : hexLiteral,
+        'hex'
+      );
+    const recovered = decryptDocument({
+      ciphertext: fromBytea(rowOnWire.document_ciphertext),
+      iv: fromBytea(rowOnWire.document_iv),
+      authTag: fromBytea(rowOnWire.document_auth_tag)
+    });
+
+    // 4. Verify the document survived the full transit
+    expect(recovered).toBe(plaintext);
+  });
 });

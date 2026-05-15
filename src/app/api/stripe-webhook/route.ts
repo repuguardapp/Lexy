@@ -182,12 +182,27 @@ async function handleSubscriptionDeleted(sub: Stripe.Subscription) {
 /**
  * Top up the org's audit credits when an invoice is paid. Both the
  * first invoice (right after checkout) and every monthly renewal land
- * here. The function bails out cleanly on:
+ * here.
+ *
+ * Org resolution strategy (in order):
+ *   1. `subscription.metadata.organization_id` — what we stamp at
+ *      checkout creation. Should always be present for subs we
+ *      created, but Stripe's subscription lifecycle has edge cases
+ *      where the metadata can disappear: plan changes via the
+ *      Customer Portal, prorations replacing one sub with another,
+ *      manual edits in the Stripe Dashboard.
+ *   2. Fallback: lookup the org by `stripe_customer_id` on the
+ *      `organizations` table. We populate that field in the
+ *      `checkout.session.completed` handler, so any customer who
+ *      has ever paid through us is resolvable this way — even if
+ *      the subscription metadata gets dropped on a later upgrade.
+ *
+ * Bails silently on:
  *   - one-off invoices (no `subscription` field)
  *   - subscriptions whose price doesn't map to a known plan
- *   - subscriptions missing the `organization_id` metadata stamp
- * so a misconfiguration causes a quiet skip instead of crediting the
- * wrong account.
+ *   - both org-resolution paths returning nothing
+ * so a misconfiguration logs + skips instead of crediting the wrong
+ * account.
  */
 async function handleInvoicePaid(invoice: Stripe.Invoice) {
   const subId = typeof invoice.subscription === 'string'
@@ -195,15 +210,40 @@ async function handleInvoicePaid(invoice: Stripe.Invoice) {
     : invoice.subscription?.id;
   if (!subId) return;
 
+  const db = supabaseService();
+
   // Look up the subscription server-side rather than trusting the
   // (sparse) invoice.lines payload — gives us the canonical plan and
   // organization_id metadata in one round trip.
   const sub = await stripe().subscriptions.retrieve(subId);
-  const orgId = sub.metadata?.organization_id;
+
+  // ---- Org resolution: metadata first, customer_id fallback ----
+  let orgId = sub.metadata?.organization_id ?? null;
   if (!orgId) {
-    console.error('[stripe-webhook] invoice.paid without org metadata', {
+    const customerId = typeof sub.customer === 'string' ? sub.customer : sub.customer?.id;
+    if (customerId) {
+      const { data: org } = await db
+        .from('organizations')
+        .select('id')
+        .eq('stripe_customer_id', customerId)
+        .maybeSingle();
+      const recovered = (org as { id?: string } | null)?.id;
+      if (recovered) {
+        orgId = recovered;
+        console.log('[stripe-webhook] invoice.paid recovered_org_via_customer', {
+          subscriptionId: sub.id,
+          customerId,
+          orgId: recovered
+        });
+      }
+    }
+  }
+  if (!orgId) {
+    console.error('[stripe-webhook] invoice.paid org_unresolved', {
       subscriptionId: sub.id,
-      invoiceId: invoice.id
+      invoiceId: invoice.id,
+      customer: sub.customer,
+      hasMetadata: Boolean(sub.metadata?.organization_id)
     });
     return;
   }
@@ -219,7 +259,7 @@ async function handleInvoicePaid(invoice: Stripe.Invoice) {
   }
 
   const amount = PLAN_CREDITS[plan];
-  const { error: rpcErr } = await supabaseService().rpc('add_audit_credits', {
+  const { error: rpcErr } = await db.rpc('add_audit_credits', {
     p_org_id: orgId,
     p_amount: amount
   });

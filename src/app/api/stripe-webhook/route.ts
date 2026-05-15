@@ -23,10 +23,15 @@ function planForPriceId(priceId: string | undefined): PlanId | null {
   if (!priceId) return null;
   if (PRICE_TO_PLAN[priceId]) return PRICE_TO_PLAN[priceId]!;
 
+  // STRIPE_PRICE_BUSINESS is a marketing alias for the Enterprise tier
+  // — the UI may name the top plan "Business" while the code keeps the
+  // canonical PlanId 'enterprise'. Map both env vars to the same plan
+  // so a Stripe Price labelled either way credits the right amount.
   const map: Array<[string | undefined, PlanId]> = [
     [process.env.STRIPE_PRICE_STARTER,    'starter'],
     [process.env.STRIPE_PRICE_PRO,        'pro'],
-    [process.env.STRIPE_PRICE_ENTERPRISE, 'enterprise']
+    [process.env.STRIPE_PRICE_ENTERPRISE, 'enterprise'],
+    [process.env.STRIPE_PRICE_BUSINESS,   'enterprise']
   ];
   for (const [env, plan] of map) {
     if (env && env === priceId) {

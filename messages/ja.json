@@ -165,6 +165,7 @@
     "recommendation": "推奨事項",
     "evidence": "根拠",
     "savePdf": "PDF として保存",
+    "editDocument": "ドキュメントを編集",
     "back": "戻る",
     "language": "言語",
     "footer": "LexyFlow により生成 · lexyflow.com · audit id {id}",
@@ -175,6 +176,22 @@
       "low": "低",
       "info": "情報"
     }
+  },
+  "editor": {
+    "title": "ドキュメントエディタ",
+    "intro": "ソーステキストを下に貼り付け、AI の推奨事項をドキュメントに直接適用してください。サーバー側には何も保存されません。",
+    "back": "← レポートに戻る",
+    "pasteLabel": "ソーステキスト",
+    "pastePlaceholder": "ポリシー、契約書、モデルカードの内容をここに貼り付けてください…",
+    "findingsTitle": "推奨事項",
+    "rewriteCta": "AI で書き直す",
+    "rewriting": "修正を生成中…",
+    "applyCta": "適用",
+    "discardCta": "破棄",
+    "downloadCta": "編集済みテキストをダウンロード",
+    "emptyDocument": "テキストを貼り付けると修正が有効になります。",
+    "rewriteError": "書き直しを実行できません — もう一度お試しください。",
+    "rewriteHint": "提案された書き直し"
   },
   "dashboard": {
     "title": "監査一覧",

@@ -29,9 +29,18 @@ import type { FrameworkId } from '@/lib/legal-frameworks';
 export const runtime = 'nodejs';
 export const maxDuration = 300;
 
-/** Cost protection. Tighter on IP than on org. */
-const IP_LIMIT  = { windowMs: 60 * 60 * 1000, max: 5  };       // 5/h per IP
-const ORG_LIMIT = { windowMs: 24 * 60 * 60 * 1000, max: 50 };  // 50/day per org
+/**
+ * Cost protection. Tighter on IP than on org, and plan-aware: a paying
+ * customer (Pro / Enterprise / Business) is on a 20-per-hour IP bucket
+ * so a small compliance team behind a corporate NAT isn't artificially
+ * throttled. Anonymous and Starter orgs stay at the original 5/h.
+ */
+const IP_LIMIT_FREE = { windowMs: 60 * 60 * 1000, max: 5  };  // 5/h per IP
+const IP_LIMIT_PAID = { windowMs: 60 * 60 * 1000, max: 20 }; // 20/h per IP
+const ORG_LIMIT     = { windowMs: 24 * 60 * 60 * 1000, max: 50 };  // 50/day per org
+
+const PAID_PLANS = new Set(['pro', 'enterprise']);
+const PAID_STATUSES = new Set(['active', 'trialing', 'past_due']);
 
 const Meta = z.object({
   organizationId: z.string().uuid(),
@@ -112,8 +121,20 @@ export async function POST(request: Request) {
   log('input_parsed', { fileSize: file.size, frameworks: meta.frameworks, lang: meta.targetLanguage });
 
   // ---- 2. Rate limit ------------------------------------------------
+  // Plan-aware IP bucket: lookup the org's active subscription once,
+  // bump the ceiling for paying customers. Read uses the service
+  // client so it bypasses RLS — we own the row.
   const ip = clientIpFrom(request.headers);
-  const ipLimit  = rateLimit({ key: `audit:ip:${ip}`,                ...IP_LIMIT });
+  const { data: subRow } = await supabaseService()
+    .from('subscriptions')
+    .select('plan,status')
+    .eq('organization_id', meta.organizationId)
+    .maybeSingle();
+  const isPaid = !!subRow
+    && PAID_PLANS.has((subRow as { plan?: string }).plan ?? '')
+    && PAID_STATUSES.has((subRow as { status?: string }).status ?? '');
+  const ipLimitConfig = isPaid ? IP_LIMIT_PAID : IP_LIMIT_FREE;
+  const ipLimit  = rateLimit({ key: `audit:ip:${ip}`,                ...ipLimitConfig });
   const orgLimit = rateLimit({ key: `audit:org:${meta.organizationId}`, ...ORG_LIMIT });
   if (!ipLimit.ok || !orgLimit.ok) {
     const offender = !ipLimit.ok ? ipLimit : orgLimit;

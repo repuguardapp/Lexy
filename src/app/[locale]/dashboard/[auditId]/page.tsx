@@ -1,4 +1,4 @@
-import { AlertTriangle, ArrowLeft, CheckCircle2, FileWarning, Info } from 'lucide-react';
+import { AlertTriangle, ArrowLeft, CheckCircle2, FileWarning, Info, Pencil } from 'lucide-react';
 import { getTranslations, unstable_setRequestLocale } from 'next-intl/server';
 import { notFound, redirect } from 'next/navigation';
 import { Link } from '@/i18n/navigation';
@@ -89,7 +89,15 @@ export default async function AuditDetailPage({ params }: PageProps) {
             {t('back')}
           </Link>
         </Button>
-        <PrintButton label={t('savePdf')} />
+        <div className="flex items-center gap-2">
+          <Button asChild variant="outline" size="sm">
+            <Link href={`/dashboard/${params.auditId}/edit`}>
+              <Pencil className="me-2 h-4 w-4" aria-hidden />
+              {t('editDocument')}
+            </Link>
+          </Button>
+          <PrintButton label={t('savePdf')} />
+        </div>
       </div>
 
       <header className="grid gap-3 print:gap-2">

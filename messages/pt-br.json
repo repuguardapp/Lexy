@@ -165,6 +165,7 @@
     "recommendation": "Recomendação",
     "evidence": "Evidência",
     "savePdf": "Salvar como PDF",
+    "editDocument": "Editar documento",
     "back": "Voltar",
     "language": "idioma",
     "footer": "Gerado pelo LexyFlow · lexyflow.com · audit id {id}",
@@ -175,6 +176,22 @@
       "low": "baixo",
       "info": "info"
     }
+  },
+  "editor": {
+    "title": "Editor de documentos",
+    "intro": "Cole o texto-fonte abaixo e aplique as recomendações da IA diretamente no documento. Nada é guardado no servidor.",
+    "back": "← Voltar ao relatório",
+    "pasteLabel": "Texto-fonte",
+    "pastePlaceholder": "Cole aqui o conteúdo da sua política, contrato ou ficha de modelo…",
+    "findingsTitle": "Recomendações",
+    "rewriteCta": "Reescrever com IA",
+    "rewriting": "Gerando correção…",
+    "applyCta": "Aplicar",
+    "discardCta": "Descartar",
+    "downloadCta": "Baixar texto editado",
+    "emptyDocument": "Cole texto para ativar as correções.",
+    "rewriteError": "Reescrita indisponível — tente novamente.",
+    "rewriteHint": "Reescrita sugerida"
   },
   "dashboard": {
     "title": "Auditorias",

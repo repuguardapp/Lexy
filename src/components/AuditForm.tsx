@@ -70,6 +70,21 @@ type View =
   | { phase: 'failed'; message: string };
 
 /**
+ * Client-side cap matches the server's check in `/api/audit/route.ts`
+ * (line ~99). We reject early so the user gets immediate, actionable
+ * feedback instead of waiting for a multi-megabyte upload only to be
+ * rejected — and so the platform's 4.5 MB Vercel body cap never
+ * fires a generic network error in our place.
+ */
+const MAX_FILE_BYTES = 25 * 1024 * 1024;
+
+function formatBytes(bytes: number): string {
+  if (bytes < 1024) return `${bytes} B`;
+  if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`;
+  return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
+}
+
+/**
  * Typed wrapper used purely to mark which throws inside onSubmit
  * already carry a known server error code — anything else is
  * coerced to `generic` in the catch. The String value of `err.code`
@@ -104,14 +119,34 @@ class AuditError extends Error {
  */
 export function AuditForm({ labels, frameworks, defaultLanguage, organizationId }: Props) {
   const [view, setView] = useState<View>({ phase: 'idle' });
+  // Inline file-validation state. Set the moment the user picks a
+  // too-large file; cleared on a valid pick. Distinct from `view.phase
+  // === 'failed'` because it lives next to the file input — the user
+  // never leaves the form, just sees a red note + a disabled submit.
+  const [fileIssue, setFileIssue] = useState<{ message: string; size: number; name: string } | null>(null);
 
   if (view.phase === 'running') return <RunningCard progress={view.progress} labels={labels} />;
   if (view.phase === 'failed') {
     return <FailedCard message={view.message} labels={labels} />;
   }
 
+  function onFileChange(event: React.ChangeEvent<HTMLInputElement>) {
+    const file = event.target.files?.[0];
+    if (!file) {
+      setFileIssue(null);
+      return;
+    }
+    if (file.size > MAX_FILE_BYTES) {
+      const localized = labels.errors.document_too_large ?? labels.errors.generic ?? 'File too large.';
+      setFileIssue({ message: localized, size: file.size, name: file.name });
+    } else {
+      setFileIssue(null);
+    }
+  }
+
   async function onSubmit(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
+    if (fileIssue) return; // belt-and-braces: button is also disabled
     setView({ phase: 'running', progress: 5 });
 
     const form = new FormData(event.currentTarget);
@@ -196,13 +231,23 @@ export function AuditForm({ labels, frameworks, defaultLanguage, organizationId 
 
   return (
     <form onSubmit={onSubmit} className="grid gap-6">
-      <Field label={labels.upload} hint={labels.uploadHint}>
+      <Field
+        label={labels.upload}
+        hint={labels.uploadHint}
+        error={fileIssue ? `${fileIssue.message} (${fileIssue.name} · ${formatBytes(fileIssue.size)})` : undefined}
+      >
         <input
           type="file"
           name="document"
           required
           accept=".pdf,.docx,.md,.txt"
-          className={cn(inputClass, 'file:mr-3 file:rounded-sm file:border-0 file:bg-secondary file:px-3 file:py-1 file:text-sm file:font-medium')}
+          onChange={onFileChange}
+          aria-invalid={fileIssue ? true : undefined}
+          className={cn(
+            inputClass,
+            'file:mr-3 file:rounded-sm file:border-0 file:bg-secondary file:px-3 file:py-1 file:text-sm file:font-medium',
+            fileIssue && 'border-destructive focus:ring-destructive'
+          )}
         />
       </Field>
 
@@ -229,7 +274,7 @@ export function AuditForm({ labels, frameworks, defaultLanguage, organizationId 
 
       <input type="hidden" name="organizationId" value={organizationId} />
 
-      <Button type="submit" size="lg" className="w-full sm:w-auto">
+      <Button type="submit" size="lg" disabled={!!fileIssue} className="w-full sm:w-auto">
         {labels.submit}
       </Button>
     </form>
@@ -333,17 +378,25 @@ function FailedCard({ message, labels }: { message: string; labels: AuditFormLab
 function Field({
   label,
   hint,
+  error,
   children
 }: {
   label: string;
   hint?: string;
+  error?: string | undefined;
   children: React.ReactNode;
 }) {
   return (
     <label className="grid gap-2">
       <span className="text-sm font-medium">{label}</span>
       {children}
-      {hint && <span className="text-xs text-muted-foreground">{hint}</span>}
+      {error ? (
+        <span className="text-xs text-destructive" role="alert">
+          {error}
+        </span>
+      ) : (
+        hint && <span className="text-xs text-muted-foreground">{hint}</span>
+      )}
     </label>
   );
 }

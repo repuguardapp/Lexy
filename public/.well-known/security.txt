@@ -1,0 +1,9 @@
+# LexyFlow — Responsible Disclosure
+# RFC 9116 — https://www.rfc-editor.org/rfc/rfc9116
+# Trust Center: https://lexyflow.com/trust
+
+Contact: mailto:security@lexyflow.com
+Expires: 2027-12-31T23:59:59.000Z
+Preferred-Languages: en, fr
+Canonical: https://lexyflow.com/.well-known/security.txt
+Policy: https://lexyflow.com/trust

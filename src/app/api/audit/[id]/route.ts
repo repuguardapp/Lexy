@@ -1,6 +1,10 @@
 import { NextResponse } from 'next/server';
 import { z } from 'zod';
+import { logAccess } from '@/lib/access-log';
+import { hashAuditId, signDeletionReceipt } from '@/lib/deletion-receipt';
+import { clientIpFrom } from '@/lib/rate-limit';
 import { supabaseService } from '@/lib/supabase';
+import { getCurrentUser, organizationIdFromUser } from '@/lib/supabase-server';
 
 /**
  * Polling endpoint for the async audit pipeline.
@@ -104,6 +108,114 @@ export async function GET(_request: Request, ctx: { params: { id: string } }) {
       headers: {
         // Discourage caching — clients poll this every few seconds.
         'Cache-Control': 'no-store'
+      }
+    }
+  );
+}
+
+const ANONYMOUS_ORG_ID = '00000000-0000-0000-0000-000000000000';
+
+/**
+ * "Delete forever" — Tier 1 trust feature.
+ *
+ * Hard-deletes the audit row (cascades to findings + ciphertext via
+ * ON DELETE CASCADE) and writes a tamper-evident receipt to
+ * deletion_log. Returns the signed receipt body to the client so the
+ * customer has cryptographic proof of the deletion they can present
+ * later to a regulator.
+ *
+ * Auth: the audit must belong to the caller's organization. Anonymous-
+ * org audits are not deletable via this endpoint — they were created
+ * without an account and live on the public-share semantics; if they
+ * need to disappear, a system purge job handles that separately.
+ */
+export async function DELETE(request: Request, ctx: { params: { id: string } }) {
+  const parsed = Params.safeParse(ctx.params);
+  if (!parsed.success) {
+    return NextResponse.json({ error: 'invalid_id' }, { status: 400 });
+  }
+  const auditId = parsed.data.id;
+  const db = supabaseService();
+
+  const { data: audit, error } = await db
+    .from('audits')
+    .select('id,organization_id')
+    .eq('id', auditId)
+    .maybeSingle();
+  if (error || !audit) {
+    return NextResponse.json({ error: 'not_found' }, { status: 404 });
+  }
+  if (audit.organization_id === ANONYMOUS_ORG_ID) {
+    return NextResponse.json({ error: 'not_deletable' }, { status: 403 });
+  }
+
+  const user = await getCurrentUser();
+  if (!user || organizationIdFromUser(user) !== audit.organization_id) {
+    return NextResponse.json({ error: 'unauthorized' }, { status: 401 });
+  }
+
+  const ip = clientIpFrom(request.headers);
+  const ua = request.headers.get('user-agent');
+  const deletedAt = new Date().toISOString();
+
+  // Issue the receipt BEFORE the delete so a crypto-key configuration
+  // error (missing DOCUMENT_ENCRYPTION_KEY) fails closed — we'd
+  // rather refuse to delete than delete-without-receipt.
+  let receipt;
+  try {
+    receipt = signDeletionReceipt(auditId, deletedAt);
+  } catch (err) {
+    return NextResponse.json(
+      { error: 'receipt_failed', detail: err instanceof Error ? err.message : 'unknown' },
+      { status: 500 }
+    );
+  }
+
+  // Persist the tamper-evident ledger row first. If the actual DELETE
+  // races with another writer (or fails), we keep the ledger entry as
+  // proof the deletion was requested.
+  const { error: ledgerErr } = await db.from('deletion_log').insert({
+    organization_id: audit.organization_id,
+    audit_id_hash: hashAuditId(auditId),
+    deleted_at: deletedAt,
+    deleted_by: user.id,
+    ip,
+    receipt_signature: receipt.signature
+  });
+  if (ledgerErr) {
+    return NextResponse.json(
+      { error: 'ledger_write_failed', detail: ledgerErr.message },
+      { status: 500 }
+    );
+  }
+
+  // Cascade-deletes findings and zeroes out the ciphertext columns.
+  const { error: deleteErr } = await db.from('audits').delete().eq('id', auditId);
+  if (deleteErr) {
+    return NextResponse.json(
+      { error: 'delete_failed', detail: deleteErr.message },
+      { status: 500 }
+    );
+  }
+
+  await logAccess({
+    organizationId: audit.organization_id,
+    action: 'audit_deleted',
+    userId: user.id,
+    auditId,
+    ip,
+    userAgent: ua
+  });
+
+  return NextResponse.json(
+    { receipt },
+    {
+      headers: {
+        'Cache-Control': 'no-store',
+        // Encourage clients (the UI) to surface the receipt as a
+        // download. The actual filename is set client-side because
+        // Content-Disposition on a JSON body is awkward to consume.
+        'X-Receipt-Issued': '1'
       }
     }
   );

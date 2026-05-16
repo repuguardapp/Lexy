@@ -1,5 +1,7 @@
 import { NextResponse } from 'next/server';
+import { logAccess } from '@/lib/access-log';
 import { decryptDocument } from '@/lib/document-crypto';
+import { clientIpFrom } from '@/lib/rate-limit';
 import { supabaseService } from '@/lib/supabase';
 import { getCurrentUser, organizationIdFromUser } from '@/lib/supabase-server';
 
@@ -41,7 +43,7 @@ function fromBytea(hexLiteral: string): Buffer {
 }
 
 export async function GET(
-  _request: Request,
+  request: Request,
   { params }: { params: { id: string } }
 ) {
   const db = supabaseService();
@@ -83,6 +85,18 @@ export async function GET(
       { status: 500 }
     );
   }
+
+  // Trust ledger: every plaintext access is visible to the customer
+  // in /dashboard/security. Logging is best-effort and does not gate
+  // the response — a logging outage must not deny the user their data.
+  await logAccess({
+    organizationId: audit.organization_id,
+    action: 'document_decrypted',
+    userId: user.id,
+    auditId: audit.id,
+    ip: clientIpFrom(request.headers),
+    userAgent: request.headers.get('user-agent')
+  });
 
   return NextResponse.json(
     { text: plaintext },

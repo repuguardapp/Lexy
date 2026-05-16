@@ -1,7 +1,8 @@
-import { AlertTriangle, ArrowLeft, CheckCircle2, FileWarning, Info, Pencil } from 'lucide-react';
+import { AlertTriangle, ArrowLeft, CheckCircle2, FileWarning, Info, Lock, Pencil } from 'lucide-react';
 import { getTranslations, unstable_setRequestLocale } from 'next-intl/server';
 import { notFound, redirect } from 'next/navigation';
 import { Link } from '@/i18n/navigation';
+import { DeleteAuditButton } from '@/components/DeleteAuditButton';
 import { PrintButton } from '@/components/PrintButton';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -98,6 +99,19 @@ export default async function AuditDetailPage({ params }: PageProps) {
             </Link>
           </Button>
           <PrintButton label={t('savePdf')} />
+          {a.organization_id !== ANONYMOUS_ORG_ID && (
+            <DeleteAuditButton
+              auditId={params.auditId}
+              locale={params.locale}
+              labels={{
+                cta: t('deleteCta'),
+                confirm: t('deleteConfirm'),
+                deleting: t('deleting'),
+                success: t('deleteSuccess'),
+                failed: t('deleteFailed')
+              }}
+            />
+          )}
         </div>
       </div>
 
@@ -109,6 +123,16 @@ export default async function AuditDetailPage({ params }: PageProps) {
             </Badge>
           ))}
           <Badge variant="secondary">{t('language')}: {a.language}</Badge>
+          {a.document_ciphertext && (
+            <Badge
+              variant="outline"
+              className="gap-1 border-emerald-300 bg-emerald-50 text-emerald-900 dark:border-emerald-900/40 dark:bg-emerald-950/30 dark:text-emerald-200"
+              title={t('encryptedTooltip')}
+            >
+              <Lock className="h-3 w-3" aria-hidden />
+              AES-256
+            </Badge>
+          )}
         </div>
         <h1 className="text-balance text-3xl font-semibold tracking-tight md:text-4xl">
           {t('title')}

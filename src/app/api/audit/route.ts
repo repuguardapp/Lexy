@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server';
 import { z } from 'zod';
+import { logAccess } from '@/lib/access-log';
 import { extractText } from '@/lib/document-extractor';
 import { encryptDocument } from '@/lib/document-crypto';
 import { runMultiPassAudit } from '@/lib/multi-pass-engine';
@@ -403,6 +404,13 @@ export async function POST(request: Request) {
         return;
       }
       log('audit_persisted', { auditId: audit.id });
+      await logAccess({
+        organizationId: meta.organizationId,
+        action: 'audit_created',
+        auditId: audit.id,
+        ip,
+        userAgent: request.headers.get('user-agent')
+      });
 
       // Persist findings (best-effort — audit row already saved)
       if (report.findings.length > 0) {

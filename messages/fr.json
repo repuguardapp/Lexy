@@ -146,6 +146,7 @@
     "invalid_metadata": "Les champs du formulaire d'audit sont incomplets ou invalides.",
     "rate_limited": "Trop d'audits sur une courte période — veuillez patienter avant de réessayer.",
     "no_credits": "Vos crédits d'audit sont épuisés. Veuillez choisir un plan pour continuer.",
+    "document_too_large_free_tier": "Le mode Essai est limité à 2 Mo par document. Passez Pro pour auditer des fichiers plus volumineux.",
     "credit_check_failed": "Impossible de vérifier vos crédits d'audit. Veuillez réessayer.",
     "extraction_failed": "Impossible de lire ce document. S'il s'agit d'un PDF scanné, veuillez l'OCRiser puis réessayer.",
     "anthropic_error": "Le moteur de conformité est temporairement indisponible. Veuillez réessayer.",
@@ -166,6 +167,14 @@
     "evidence": "Preuve",
     "savePdf": "Enregistrer en PDF",
     "editDocument": "Éditer le document",
+    "editLocked": "Débloquer l'éditeur IA",
+    "paywallTeaserBadge": "Aperçu — passez Pro",
+    "paywallTitle": "{count, plural, one {# lacune supplémentaire masquée} other {# lacunes supplémentaires masquées}}",
+    "paywallBody": "Votre rapport gratuit vous montre le score global et la première lacune détectée. L'analyse complète et l'éditeur correctif IA sont réservés aux clients Pro et Enterprise.",
+    "paywallBenefit1": "{count, plural, one {Accès à la # lacune masquée avec recommandations} other {Accès aux # lacunes masquées avec recommandations}}",
+    "paywallBenefit2": "Éditeur IA pour corriger chaque clause en un clic",
+    "paywallBenefit3": "Stockage chiffré AES-256-GCM + DPA signé + Trust Center",
+    "paywallCta": "Voir les offres →",
     "deleteCta": "Supprimer définitivement",
     "deleteConfirm": "Confirmer la suppression",
     "deleting": "Suppression…",
@@ -271,6 +280,8 @@
     "emptyCta": "Lancer mon premier audit",
     "creditsAvailable": "{count, plural, one {# crédit d'audit disponible} other {# crédits d'audit disponibles}}",
     "creditsLow": "Ajoutez des crédits pour lancer plus d'audits",
-    "creditsTopUp": "Recharger"
+    "creditsTopUp": "Recharger",
+    "freeBanner": "Mode Essai activé. Passez à l'offre Enterprise pour sécuriser vos documents.",
+    "freeBannerCta": "Passer Pro"
   }
 }

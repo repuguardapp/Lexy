@@ -6,6 +6,7 @@ import { encryptDocument } from '@/lib/document-crypto';
 import { runMultiPassAudit } from '@/lib/multi-pass-engine';
 import { clientIpFrom, rateLimit } from '@/lib/rate-limit';
 import { supabaseService } from '@/lib/supabase';
+import { FREE_TIER_MAX_BYTES, getTierForOrg } from '@/lib/tier';
 import { hashDocument, wipeBuffer } from '@/lib/zero-knowledge';
 import type { FrameworkId } from '@/lib/legal-frameworks';
 
@@ -60,6 +61,7 @@ const Meta = z.object({
 type AuditError =
   | 'document_required'
   | 'document_too_large'
+  | 'document_too_large_free_tier'
   | 'invalid_metadata'
   | 'rate_limited'
   | 'no_credits'
@@ -153,9 +155,18 @@ export async function POST(request: Request) {
   }
 
   const db = supabaseService();
+  const isAnonymousOrg = meta.organizationId === '00000000-0000-0000-0000-000000000000';
 
-  // ---- 3. Credit gate (atomic) --------------------------------------
-  // Anonymous-org bypasses the check inside the SQL function.
+  // ---- 3. Credit gate + free-trial fallback (atomic) ----------------
+  // Order of precedence:
+  //   1. Anonymous-org and paid customers go straight through the
+  //      credit-consume RPC (anonymous bypasses inside the function).
+  //   2. If the consume returns false (no credits) AND the caller is a
+  //      real org currently on the FREE tier AND they have not yet
+  //      used their one freebie, we authorise the audit as a free
+  //      trial. The free trial is gated on file size (2 MB cap) to
+  //      keep AI costs predictable.
+  //   3. Any other case → 402, redirect to /pricing.
   const { data: consumed, error: creditErr } = await db.rpc('try_consume_audit_credit', {
     p_org_id: meta.organizationId
   });
@@ -163,19 +174,59 @@ export async function POST(request: Request) {
     log('credit_check_failed', { error: creditErr.message });
     return errorJson('credit_check_failed', creditErr.message, 500);
   }
+
+  let usingFreeTrial = false;
   if (!consumed) {
-    log('no_credits');
-    return NextResponse.json(
-      { error: 'no_credits', detail: 'Out of audit credits.', redirect: '/pricing' },
-      { status: 402 }
-    );
+    if (isAnonymousOrg) {
+      // Should not happen — the SQL function returns true for anon.
+      // Guard rail in case the function definition changes.
+      log('no_credits_anon_unexpected');
+      return NextResponse.json(
+        { error: 'no_credits', detail: 'Anonymous quota exceeded.', redirect: '/pricing' },
+        { status: 402 }
+      );
+    }
+    const tier = await getTierForOrg(db, meta.organizationId);
+    const { data: orgRow } = await db
+      .from('organizations')
+      .select('free_audit_used')
+      .eq('id', meta.organizationId)
+      .maybeSingle();
+    const freeAuditUsed =
+      (orgRow as { free_audit_used?: boolean } | null)?.free_audit_used ?? false;
+
+    if (tier === 'free' && !freeAuditUsed) {
+      if (file.size > FREE_TIER_MAX_BYTES) {
+        log('free_tier_size_rejected', { size: file.size, cap: FREE_TIER_MAX_BYTES });
+        return errorJson(
+          'document_too_large_free_tier',
+          `Free tier max ${FREE_TIER_MAX_BYTES} bytes.`,
+          413
+        );
+      }
+      usingFreeTrial = true;
+      log('free_trial_authorized');
+    } else {
+      log('no_credits', { tier, freeAuditUsed });
+      return NextResponse.json(
+        { error: 'no_credits', detail: 'Out of audit credits.', redirect: '/pricing' },
+        { status: 402 }
+      );
+    }
+  } else {
+    log('credit_consumed');
   }
-  log('credit_consumed');
 
   // Helper: any failure path beyond this point must refund the credit.
   // Centralising this guarantees we never leak a paid credit when the
-  // audit didn't actually deliver.
+  // audit didn't actually deliver. Free-trial paths skip refunds —
+  // there is nothing to refund (no credit was consumed) and we have
+  // not yet flipped free_audit_used (that happens on success).
   const refundIfNeeded = async (reason: string) => {
+    if (usingFreeTrial) {
+      log('refund_skipped_free_trial', { reason });
+      return;
+    }
     const { error: refundErr } = await db.rpc('refund_audit_credit', {
       p_org_id: meta.organizationId
     });
@@ -404,6 +455,23 @@ export async function POST(request: Request) {
         return;
       }
       log('audit_persisted', { auditId: audit.id });
+
+      // Free-trial bookkeeping: flip the org flag now that the audit
+      // row exists. Failure to flip is logged but not fatal — worst
+      // case the user gets a second freebie on the next attempt, and
+      // we'd rather over-serve than fail-close on a paid step.
+      if (usingFreeTrial) {
+        const { error: flagErr } = await db
+          .from('organizations')
+          .update({ free_audit_used: true })
+          .eq('id', meta.organizationId);
+        if (flagErr) {
+          log('free_audit_flag_failed', { error: flagErr.message });
+        } else {
+          log('free_audit_consumed');
+        }
+      }
+
       await logAccess({
         organizationId: meta.organizationId,
         action: 'audit_created',

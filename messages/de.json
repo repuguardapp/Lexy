@@ -146,6 +146,7 @@
     "invalid_metadata": "Die Audit-Formularfelder sind unvollständig oder ungültig.",
     "rate_limited": "Zu viele Audits in kurzer Zeit — bitte warten und erneut versuchen.",
     "no_credits": "Ihre Audit-Credits sind aufgebraucht. Bitte wählen Sie einen Plan.",
+    "document_too_large_free_tier": "Der Testmodus ist auf 2 MB pro Dokument begrenzt. Upgraden Sie auf Pro, um größere Dateien zu prüfen.",
     "credit_check_failed": "Audit-Credits konnten nicht geprüft werden. Bitte erneut versuchen.",
     "extraction_failed": "Das Dokument konnte nicht gelesen werden. Bei eingescannten PDFs bitte OCR ausführen und erneut versuchen.",
     "anthropic_error": "Die Compliance-Engine ist vorübergehend nicht verfügbar. Bitte erneut versuchen.",
@@ -166,6 +167,14 @@
     "evidence": "Beleg",
     "savePdf": "Als PDF speichern",
     "editDocument": "Dokument bearbeiten",
+    "editLocked": "KI-Editor freischalten",
+    "paywallTeaserBadge": "Vorschau — auf Pro upgraden",
+    "paywallTitle": "{count, plural, one {# weiterer Befund verborgen} other {# weitere Befunde verborgen}}",
+    "paywallBody": "Ihr kostenloser Bericht zeigt das Gesamtergebnis und den ersten erkannten Befund. Die vollständige Analyse und der KI-Korrektureditor sind Pro- und Enterprise-Kunden vorbehalten.",
+    "paywallBenefit1": "{count, plural, one {Zugriff auf den # verborgenen Befund mit Empfehlungen} other {Zugriff auf die # verborgenen Befunde mit Empfehlungen}}",
+    "paywallBenefit2": "KI-Editor zum Korrigieren jeder nicht-konformen Klausel mit einem Klick",
+    "paywallBenefit3": "AES-256-GCM verschlüsselte Speicherung + signierter DPA + Trust Center",
+    "paywallCta": "Pläne ansehen →",
     "deleteCta": "Endgültig löschen",
     "deleteConfirm": "Löschen bestätigen",
     "deleting": "Wird gelöscht…",
@@ -271,6 +280,8 @@
     "emptyCta": "Erstes Audit starten",
     "creditsAvailable": "{count, plural, one {# Audit-Credit verfügbar} other {# Audit-Credits verfügbar}}",
     "creditsLow": "Credits aufladen, um weitere Audits zu starten",
-    "creditsTopUp": "Aufladen"
+    "creditsTopUp": "Aufladen",
+    "freeBanner": "Testmodus aktiv. Wechseln Sie zur Enterprise-Option, um Ihre Dokumente abzusichern.",
+    "freeBannerCta": "Auf Pro upgraden"
   }
 }

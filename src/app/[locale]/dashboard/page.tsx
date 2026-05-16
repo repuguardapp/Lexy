@@ -1,4 +1,4 @@
-import { ArrowUpRight, Coins, FileText, ShieldAlert } from 'lucide-react';
+import { ArrowUpRight, Coins, FileText, ShieldAlert, Sparkles } from 'lucide-react';
 import { getTranslations, unstable_setRequestLocale } from 'next-intl/server';
 import { redirect } from 'next/navigation';
 import { Link } from '@/i18n/navigation';
@@ -10,6 +10,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { FRAMEWORKS, type FrameworkId } from '@/lib/legal-frameworks';
 import { supabaseService } from '@/lib/supabase';
 import { createSupabaseServerClient, getCurrentUser, organizationIdFromUser } from '@/lib/supabase-server';
+import { getTierForOrg } from '@/lib/tier';
 
 export const dynamic = 'force-dynamic';
 export const metadata = {
@@ -59,13 +60,18 @@ export default async function DashboardPage({
   // user's own org anyway and this keeps the read fast and explicit.
   const orgId = organizationIdFromUser(user);
   let credits = 0;
+  let tier: 'free' | 'paid' = 'free';
   if (orgId) {
-    const { data: org } = await supabaseService()
-      .from('organizations')
-      .select('credits_remaining')
-      .eq('id', orgId)
-      .maybeSingle();
+    const [{ data: org }, resolvedTier] = await Promise.all([
+      supabaseService()
+        .from('organizations')
+        .select('credits_remaining')
+        .eq('id', orgId)
+        .maybeSingle(),
+      getTierForOrg(supabaseService(), orgId)
+    ]);
     credits = (org as { credits_remaining?: number } | null)?.credits_remaining ?? 0;
+    tier = resolvedTier;
   }
 
   let query = supabase
@@ -83,6 +89,17 @@ export default async function DashboardPage({
 
   return (
     <div className="py-12">
+      {tier === 'free' && (
+        <div className="mb-6 flex flex-wrap items-center gap-3 rounded-lg border border-amber-300 bg-amber-50 px-4 py-3 text-sm dark:border-amber-900/40 dark:bg-amber-950/30">
+          <Sparkles className="h-4 w-4 flex-shrink-0 text-amber-600" aria-hidden />
+          <span className="flex-1 text-amber-900 dark:text-amber-200">
+            {t('freeBanner')}
+          </span>
+          <Button asChild size="sm" variant="default">
+            <Link href="/pricing">{t('freeBannerCta')}</Link>
+          </Button>
+        </div>
+      )}
       <header className="mb-10 flex flex-wrap items-end justify-between gap-4">
         <div>
           <h1 className="text-balance text-3xl font-semibold tracking-tight md:text-4xl">

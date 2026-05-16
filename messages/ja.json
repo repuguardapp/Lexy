@@ -146,6 +146,7 @@
     "invalid_metadata": "監査フォームの項目が不完全または無効です。",
     "rate_limited": "短時間に監査が多すぎます — お待ちいただいてから再試行してください。",
     "no_credits": "監査クレジットが不足しています。プランを選択してください。",
+    "document_too_large_free_tier": "トライアルモードは 1 ドキュメントあたり 2 MB までです。Pro にアップグレードすると大きなファイルを監査できます。",
     "credit_check_failed": "監査クレジットを確認できませんでした。再試行してください。",
     "extraction_failed": "このドキュメントを読み取れませんでした。スキャン PDF の場合は OCR を実行してから再試行してください。",
     "anthropic_error": "コンプライアンスエンジンは一時的に利用できません。再試行してください。",
@@ -166,6 +167,14 @@
     "evidence": "根拠",
     "savePdf": "PDF として保存",
     "editDocument": "ドキュメントを編集",
+    "editLocked": "AI エディタをアンロック",
+    "paywallTeaserBadge": "プレビュー — Pro にアップグレード",
+    "paywallTitle": "他に {count} 件の指摘が非表示です",
+    "paywallBody": "無料レポートでは総合スコアと最初の指摘事項のみ表示されます。完全な分析と AI 修正エディタは Pro および Enterprise のお客様限定です。",
+    "paywallBenefit1": "非表示の {count} 件の指摘事項とその推奨対応にアクセス",
+    "paywallBenefit2": "非準拠の各条項をワンクリックで修正する AI エディタ",
+    "paywallBenefit3": "AES-256-GCM 暗号化ストレージ + 署名済み DPA + Trust Center",
+    "paywallCta": "プランを見る →",
     "deleteCta": "完全に削除",
     "deleteConfirm": "削除を確認",
     "deleting": "削除中…",
@@ -271,6 +280,8 @@
     "emptyCta": "最初の監査を開始",
     "creditsAvailable": "{count}監査クレジット利用可能",
     "creditsLow": "クレジットを追加してさらに監査を実行",
-    "creditsTopUp": "チャージ"
+    "creditsTopUp": "チャージ",
+    "freeBanner": "トライアルモード有効中。Enterprise プランに切り替えてドキュメントを保護してください。",
+    "freeBannerCta": "Pro にアップグレード"
   }
 }

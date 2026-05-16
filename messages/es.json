@@ -146,6 +146,7 @@
     "invalid_metadata": "Los campos del formulario de auditoría están incompletos o son inválidos.",
     "rate_limited": "Demasiadas auditorías en poco tiempo — espera y reinténtalo.",
     "no_credits": "Te has quedado sin créditos de auditoría. Elige un plan para continuar.",
+    "document_too_large_free_tier": "El modo de prueba está limitado a 2 MB por documento. Pasa a Pro para auditar archivos más grandes.",
     "credit_check_failed": "No pudimos verificar tus créditos de auditoría. Reinténtalo.",
     "extraction_failed": "No pudimos leer este documento. Si es un PDF escaneado, ejecuta OCR e inténtalo de nuevo.",
     "anthropic_error": "El motor de cumplimiento no está disponible temporalmente. Reinténtalo.",
@@ -166,6 +167,14 @@
     "evidence": "Evidencia",
     "savePdf": "Guardar como PDF",
     "editDocument": "Editar documento",
+    "editLocked": "Desbloquear el editor IA",
+    "paywallTeaserBadge": "Vista previa — pasa a Pro",
+    "paywallTitle": "{count, plural, one {# hallazgo adicional oculto} other {# hallazgos adicionales ocultos}}",
+    "paywallBody": "Tu informe gratuito muestra la puntuación global y el primer hallazgo detectado. El análisis completo y el editor correctivo IA están reservados a los clientes Pro y Enterprise.",
+    "paywallBenefit1": "{count, plural, one {Acceso al # hallazgo oculto con recomendaciones} other {Acceso a los # hallazgos ocultos con recomendaciones}}",
+    "paywallBenefit2": "Editor IA para corregir cada cláusula no conforme en un clic",
+    "paywallBenefit3": "Almacenamiento cifrado AES-256-GCM + DPA firmado + Trust Center",
+    "paywallCta": "Ver planes →",
     "deleteCta": "Eliminar definitivamente",
     "deleteConfirm": "Confirmar eliminación",
     "deleting": "Eliminando…",
@@ -271,6 +280,8 @@
     "emptyCta": "Lanzar mi primera auditoría",
     "creditsAvailable": "{count, plural, one {# crédito de auditoría disponible} other {# créditos de auditoría disponibles}}",
     "creditsLow": "Añade créditos para lanzar más auditorías",
-    "creditsTopUp": "Recargar"
+    "creditsTopUp": "Recargar",
+    "freeBanner": "Modo de prueba activado. Pasa a la oferta Enterprise para asegurar tus documentos.",
+    "freeBannerCta": "Pasar a Pro"
   }
 }

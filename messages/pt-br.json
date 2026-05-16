@@ -146,6 +146,7 @@
     "invalid_metadata": "Os campos do formulário de auditoria estão incompletos ou inválidos.",
     "rate_limited": "Muitas auditorias em curto período — aguarde e tente novamente.",
     "no_credits": "Seus créditos de auditoria acabaram. Escolha um plano para continuar.",
+    "document_too_large_free_tier": "O modo de avaliação é limitado a 2 MB por documento. Assine Pro para auditar arquivos maiores.",
     "credit_check_failed": "Não foi possível verificar seus créditos. Tente novamente.",
     "extraction_failed": "Não foi possível ler este documento. Se for um PDF escaneado, execute OCR e tente novamente.",
     "anthropic_error": "O motor de conformidade está temporariamente indisponível. Tente novamente.",
@@ -166,6 +167,14 @@
     "evidence": "Evidência",
     "savePdf": "Salvar como PDF",
     "editDocument": "Editar documento",
+    "editLocked": "Desbloquear o editor IA",
+    "paywallTeaserBadge": "Prévia — assine Pro",
+    "paywallTitle": "{count, plural, one {# achado adicional oculto} other {# achados adicionais ocultos}}",
+    "paywallBody": "Seu relatório gratuito mostra a pontuação geral e o primeiro achado detectado. A análise completa e o editor corretivo IA são reservados aos clientes Pro e Enterprise.",
+    "paywallBenefit1": "{count, plural, one {Acesso ao # achado oculto com recomendações} other {Acesso aos # achados ocultos com recomendações}}",
+    "paywallBenefit2": "Editor IA para corrigir cada cláusula não conforme em um clique",
+    "paywallBenefit3": "Armazenamento criptografado AES-256-GCM + DPA assinado + Trust Center",
+    "paywallCta": "Ver planos →",
     "deleteCta": "Excluir definitivamente",
     "deleteConfirm": "Confirmar exclusão",
     "deleting": "Excluindo…",
@@ -271,6 +280,8 @@
     "emptyCta": "Iniciar minha primeira auditoria",
     "creditsAvailable": "{count, plural, one {# crédito de auditoria disponível} other {# créditos de auditoria disponíveis}}",
     "creditsLow": "Adicione créditos para executar mais auditorias",
-    "creditsTopUp": "Recarregar"
+    "creditsTopUp": "Recarregar",
+    "freeBanner": "Modo de avaliação ativo. Passe para o plano Enterprise para proteger seus documentos.",
+    "freeBannerCta": "Assinar Pro"
   }
 }

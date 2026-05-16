@@ -146,6 +146,7 @@
     "invalid_metadata": "The audit form fields are incomplete or invalid.",
     "rate_limited": "Too many audits in a short window — please wait and retry.",
     "no_credits": "You're out of audit credits. Please choose a plan to continue.",
+    "document_too_large_free_tier": "Trial mode is limited to 2 MB per document. Upgrade to Pro to audit larger files.",
     "credit_check_failed": "We couldn't verify your audit credits. Please retry.",
     "extraction_failed": "We couldn't read this document. If it's a scanned PDF, please run OCR and try again.",
     "anthropic_error": "The compliance engine is temporarily unavailable. Please retry.",
@@ -166,6 +167,14 @@
     "evidence": "Evidence",
     "savePdf": "Save as PDF",
     "editDocument": "Edit document",
+    "editLocked": "Unlock the AI editor",
+    "paywallTeaserBadge": "Preview — upgrade to Pro",
+    "paywallTitle": "{count, plural, one {# additional finding hidden} other {# additional findings hidden}}",
+    "paywallBody": "Your free report shows the overall score and the first detected finding. Full analysis and the AI corrective editor are reserved for Pro and Enterprise customers.",
+    "paywallBenefit1": "{count, plural, one {Access to the # hidden finding with full recommendations} other {Access to the # hidden findings with full recommendations}}",
+    "paywallBenefit2": "AI editor to rewrite each non-compliant clause in one click",
+    "paywallBenefit3": "AES-256-GCM encrypted storage + signed DPA + Trust Center",
+    "paywallCta": "See plans →",
     "deleteCta": "Delete forever",
     "deleteConfirm": "Confirm deletion",
     "deleting": "Deleting…",
@@ -271,6 +280,8 @@
     "emptyCta": "Run my first audit",
     "creditsAvailable": "{count, plural, one {# audit credit available} other {# audit credits available}}",
     "creditsLow": "Add credits to run more audits",
-    "creditsTopUp": "Top up"
+    "creditsTopUp": "Top up",
+    "freeBanner": "Trial mode active. Upgrade to Enterprise to secure your documents.",
+    "freeBannerCta": "Go Pro"
   }
 }

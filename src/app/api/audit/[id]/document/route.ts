@@ -42,14 +42,14 @@ function fromBytea(hexLiteral: string): Buffer {
 
 export async function GET(
   _request: Request,
-  { params }: { params: { auditId: string } }
+  { params }: { params: { id: string } }
 ) {
   const db = supabaseService();
 
   const { data: auditRaw, error } = await db
     .from('audits')
     .select('id,organization_id,document_ciphertext,document_iv,document_auth_tag')
-    .eq('id', params.auditId)
+    .eq('id', params.id)
     .maybeSingle();
 
   if (error || !auditRaw) {

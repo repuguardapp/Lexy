@@ -58,7 +58,7 @@ interface AuditRow {
 
 export async function POST(
   request: Request,
-  { params }: { params: { auditId: string } }
+  { params }: { params: { id: string } }
 ) {
   const ip = clientIpFrom(request.headers);
   const limit = rateLimit({ key: `rewrite:ip:${ip}`, ...IP_LIMIT });
@@ -84,7 +84,7 @@ export async function POST(
   const { data: auditRaw, error: auditErr } = await db
     .from('audits')
     .select('id,organization_id,language')
-    .eq('id', params.auditId)
+    .eq('id', params.id)
     .maybeSingle();
   if (auditErr || !auditRaw) {
     return NextResponse.json({ error: 'audit_not_found' }, { status: 404 });
@@ -104,7 +104,7 @@ export async function POST(
     .from('audit_findings')
     .select('id,audit_id,framework_id,title,body,recommendation,evidence,severity')
     .eq('id', payload.findingId)
-    .eq('audit_id', params.auditId)
+    .eq('audit_id', params.id)
     .maybeSingle();
   if (findingErr || !findingRaw) {
     return NextResponse.json({ error: 'finding_not_found' }, { status: 404 });

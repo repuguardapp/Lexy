@@ -114,7 +114,9 @@ export default async function AuditEditPage({ params }: PageProps) {
           rewriteError: t('rewriteError'),
           rewriteHint: t('rewriteHint'),
           loadingDocument: t('loadingDocument'),
-          retainedNotice: t('retainedNotice')
+          retainedNotice: t('retainedNotice'),
+          resolvedLabel: t('resolvedLabel'),
+          noEvidenceAnchor: t('noEvidenceAnchor')
         }}
       />
     </div>

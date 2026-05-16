@@ -184,16 +184,18 @@
     "pasteLabel": "ソーステキスト",
     "pastePlaceholder": "ポリシー、契約書、モデルカードの内容をここに貼り付けてください…",
     "findingsTitle": "推奨事項",
-    "rewriteCta": "AI で書き直す",
+    "rewriteCta": "この条項を修正",
     "rewriting": "修正を生成中…",
-    "applyCta": "適用",
+    "applyCta": "修正を適用",
     "discardCta": "破棄",
     "downloadCta": "編集済みテキストをダウンロード",
     "emptyDocument": "テキストを貼り付けると修正が有効になります。",
-    "rewriteError": "書き直しを実行できません — もう一度お試しください。",
-    "rewriteHint": "提案された書き直し",
+    "rewriteError": "修正を実行できません — もう一度お試しください。",
+    "rewriteHint": "AI による修正案",
     "loadingDocument": "ドキュメントを復号中…",
-    "retainedNotice": "暗号化ストレージ（AES-256-GCM）から読み込まれたドキュメントです。本文は本セッション中にのみサーバーから取り出されました。"
+    "retainedNotice": "暗号化ストレージ（AES-256-GCM）から読み込まれたドキュメントです。本文は本セッション中にのみサーバーから取り出されました。",
+    "resolvedLabel": "解決済み",
+    "noEvidenceAnchor": "この指摘事項はドキュメント内の特定条項に紐づいていません — 推奨事項を手動で適用してください。"
   },
   "dashboard": {
     "title": "監査一覧",

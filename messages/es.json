@@ -184,16 +184,18 @@
     "pasteLabel": "Texto fuente",
     "pastePlaceholder": "Pega aquí el contenido de tu política, contrato o ficha modelo…",
     "findingsTitle": "Recomendaciones",
-    "rewriteCta": "Reescribir con IA",
+    "rewriteCta": "Corregir esta cláusula",
     "rewriting": "Generando corrección…",
-    "applyCta": "Aplicar",
+    "applyCta": "Aplicar corrección",
     "discardCta": "Descartar",
     "downloadCta": "Descargar texto editado",
     "emptyDocument": "Pega texto para activar las correcciones.",
-    "rewriteError": "Reescritura no disponible — intenta de nuevo.",
-    "rewriteHint": "Reescritura sugerida",
+    "rewriteError": "Corrección no disponible — intenta de nuevo.",
+    "rewriteHint": "Cláusula corregida por la IA",
     "loadingDocument": "Descifrando el documento…",
-    "retainedNotice": "Documento cargado desde el almacenamiento cifrado (AES-256-GCM). El texto solo salió del servidor en esta sesión."
+    "retainedNotice": "Documento cargado desde el almacenamiento cifrado (AES-256-GCM). El texto solo salió del servidor en esta sesión.",
+    "resolvedLabel": "Resuelta",
+    "noEvidenceAnchor": "Este hallazgo no está anclado a una cláusula específica del documento — aplica la recomendación manualmente."
   },
   "dashboard": {
     "title": "Auditorías",

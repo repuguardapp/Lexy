@@ -184,16 +184,18 @@
     "pasteLabel": "Source text",
     "pastePlaceholder": "Paste the content of your policy, contract or model card here…",
     "findingsTitle": "Recommendations",
-    "rewriteCta": "Rewrite with AI",
+    "rewriteCta": "Fix this clause",
     "rewriting": "Generating correction…",
-    "applyCta": "Apply",
+    "applyCta": "Apply correction",
     "discardCta": "Discard",
     "downloadCta": "Download edited text",
     "emptyDocument": "Paste text to enable corrections.",
-    "rewriteError": "Rewrite unavailable — please retry.",
-    "rewriteHint": "Suggested rewrite",
+    "rewriteError": "Correction unavailable — please retry.",
+    "rewriteHint": "AI-corrected clause",
     "loadingDocument": "Decrypting document…",
-    "retainedNotice": "Document loaded from encrypted storage (AES-256-GCM). The text only left the server during this session."
+    "retainedNotice": "Document loaded from encrypted storage (AES-256-GCM). The text only left the server during this session.",
+    "resolvedLabel": "Resolved",
+    "noEvidenceAnchor": "This finding isn't anchored to a specific clause in the document — apply the recommendation manually."
   },
   "dashboard": {
     "title": "Audits",

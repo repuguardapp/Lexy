@@ -184,16 +184,18 @@
     "pasteLabel": "Quelltext",
     "pastePlaceholder": "Fügen Sie hier den Inhalt Ihrer Richtlinie, Ihres Vertrags oder Ihrer Modellkarte ein…",
     "findingsTitle": "Empfehlungen",
-    "rewriteCta": "Mit KI neu schreiben",
+    "rewriteCta": "Diese Klausel korrigieren",
     "rewriting": "Korrektur wird generiert…",
-    "applyCta": "Übernehmen",
+    "applyCta": "Korrektur übernehmen",
     "discardCta": "Verwerfen",
     "downloadCta": "Bearbeiteten Text herunterladen",
     "emptyDocument": "Text einfügen, um Korrekturen zu aktivieren.",
-    "rewriteError": "Neuschreibung nicht verfügbar — bitte erneut versuchen.",
-    "rewriteHint": "Vorgeschlagene Neuschreibung",
+    "rewriteError": "Korrektur nicht verfügbar — bitte erneut versuchen.",
+    "rewriteHint": "KI-korrigierte Klausel",
     "loadingDocument": "Dokument wird entschlüsselt…",
-    "retainedNotice": "Dokument aus dem verschlüsselten Speicher geladen (AES-256-GCM). Der Text hat den Server nur in dieser Sitzung verlassen."
+    "retainedNotice": "Dokument aus dem verschlüsselten Speicher geladen (AES-256-GCM). Der Text hat den Server nur in dieser Sitzung verlassen.",
+    "resolvedLabel": "Behoben",
+    "noEvidenceAnchor": "Dieser Befund ist nicht an eine bestimmte Klausel im Dokument geknüpft — wenden Sie die Empfehlung manuell an."
   },
   "dashboard": {
     "title": "Audits",

@@ -184,16 +184,18 @@
     "pasteLabel": "Texte source",
     "pastePlaceholder": "Collez ici le contenu de votre politique, contrat ou fiche modèle…",
     "findingsTitle": "Recommandations",
-    "rewriteCta": "Réécrire avec l'IA",
+    "rewriteCta": "Corriger cette clause",
     "rewriting": "Génération de la correction…",
-    "applyCta": "Appliquer",
+    "applyCta": "Appliquer la correction",
     "discardCta": "Ignorer",
     "downloadCta": "Télécharger le texte édité",
     "emptyDocument": "Collez du texte pour activer les corrections.",
-    "rewriteError": "Réécriture indisponible — veuillez réessayer.",
-    "rewriteHint": "Réécriture suggérée",
+    "rewriteError": "Correction indisponible — veuillez réessayer.",
+    "rewriteHint": "Clause corrigée par l'IA",
     "loadingDocument": "Déchiffrement du document…",
-    "retainedNotice": "Document chargé depuis le stockage chiffré (AES-256-GCM). Le texte n'a quitté le serveur que dans cette session."
+    "retainedNotice": "Document chargé depuis le stockage chiffré (AES-256-GCM). Le texte n'a quitté le serveur que dans cette session.",
+    "resolvedLabel": "Résolue",
+    "noEvidenceAnchor": "Cette lacune n'est pas ancrée sur une clause précise du document — appliquez la recommandation manuellement."
   },
   "dashboard": {
     "title": "Audits",

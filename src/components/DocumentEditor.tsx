@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useMemo, useState } from 'react';
-import { Loader2, Sparkles } from 'lucide-react';
+import { CheckCircle2, Loader2, Sparkles } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -31,6 +31,8 @@ export interface DocumentEditorLabels {
   rewriteHint: string;
   loadingDocument: string;
   retainedNotice: string;
+  resolvedLabel: string;
+  noEvidenceAnchor: string;
 }
 
 interface Props {
@@ -45,36 +47,49 @@ interface Props {
 
 interface SuggestionState {
   /** Per-finding async lifecycle. */
-  status: 'idle' | 'loading' | 'ready' | 'error';
-  /** AI-suggested replacement segment, ready for user review. */
-  rewrite?: string;
-  /** Source segment we asked the AI to replace (echoed back so we know what to swap). */
-  segment?: string;
+  status: 'loading' | 'ready' | 'error';
+  /** Server-canonical original clause (= finding.evidence). */
+  segmentOriginal?: string;
+  /** AI-suggested replacement clause. */
+  segmentCorrige?: string;
   /** Surfaced error code for the rewrite-failed banner. */
   errorCode?: string;
 }
 
 /**
- * Premium editor (scaffold).
+ * Premium clause-rewrite editor.
  *
- * Zero-Knowledge by design: the document was wiped at the end of the
- * original audit, so v1 of the editor asks the user to paste the
- * source text into a textarea. Each finding gets an inline "rewrite"
- * button — the server uses the persisted finding context to suggest a
- * replacement for the offending segment, which the user can apply or
- * discard. Nothing is saved server-side beyond the rewrite API call.
+ * Flow:
+ *   1. Mount → if the audit retains a ciphertext, fetch + decrypt
+ *      via /api/audit/[id]/document and pre-fill the textarea.
+ *   2. User clicks "Corriger cette clause" on a finding → POST
+ *      /api/audit/[id]/rewrite with ONLY { findingId, targetLanguage }
+ *      (no document text on the wire). Server reads the canonical
+ *      clause + rule from Postgres, asks Claude for strict JSON
+ *      {segment_original, segment_corrige}.
+ *   3. User clicks "Appliquer" → in-place find-and-replace in the
+ *      textarea (segment_original is byte-for-byte finding.evidence
+ *      so the swap is deterministic). Finding flips to "Résolue ✓"
+ *      and the rewrite button disappears — prevents double-apply.
+ *   4. User clicks "Télécharger" → exports the edited text as .txt.
  *
- * Roadmap (not in this scaffold):
- *   - PDF/DOCX re-upload + server-side extraction (re-uses the
- *     existing /api/audit extractor without persisting bytes).
- *   - Highlight evidence spans in the textarea so the offending text
- *     is visually anchored next to its finding.
- *   - Track-changes view (before/after) in PDF export.
+ * Nothing is persisted server-side beyond the strict-JSON rewrite
+ * round-trip. The decrypted document only exists in the user's
+ * browser for the duration of the session.
  */
-export function DocumentEditor({ auditId, targetLanguage, findings, labels, hasRetainedDocument }: Props) {
+export function DocumentEditor({
+  auditId,
+  targetLanguage,
+  findings,
+  labels,
+  hasRetainedDocument
+}: Props) {
   const [text, setText] = useState('');
   const [loadingDoc, setLoadingDoc] = useState(hasRetainedDocument);
   const [suggestions, setSuggestions] = useState<Record<string, SuggestionState>>({});
+  /** Findings whose suggested rewrite has been applied to the textarea.
+   *  Used to flip the card into a "Resolved" state and prevent re-runs. */
+  const [resolved, setResolved] = useState<Set<string>>(new Set());
 
   const wordCount = useMemo(() => text.trim().split(/\s+/).filter(Boolean).length, [text]);
 
@@ -107,7 +122,6 @@ export function DocumentEditor({ auditId, targetLanguage, findings, labels, hasR
   }, [auditId, hasRetainedDocument]);
 
   async function requestRewrite(finding: EditorFinding) {
-    if (!text.trim()) return;
     setSuggestions((prev) => ({ ...prev, [finding.id]: { status: 'loading' } }));
     try {
       const res = await fetch(`/api/audit/${auditId}/rewrite`, {
@@ -115,17 +129,16 @@ export function DocumentEditor({ auditId, targetLanguage, findings, labels, hasR
         headers: { 'content-type': 'application/json' },
         body: JSON.stringify({
           findingId: finding.id,
-          documentText: text,
           targetLanguage
         })
       });
       const body = (await res.json().catch(() => ({}))) as {
-        rewrite?: string;
-        segment?: string;
+        segment_original?: string;
+        segment_corrige?: string;
         error?: string;
       };
-      const rewrite = body.rewrite;
-      if (!res.ok || !rewrite) {
+      const segmentCorrige = body.segment_corrige;
+      if (!res.ok || !segmentCorrige) {
         setSuggestions((prev) => ({
           ...prev,
           [finding.id]: { status: 'error', errorCode: body.error ?? 'rewrite_failed' }
@@ -136,8 +149,8 @@ export function DocumentEditor({ auditId, targetLanguage, findings, labels, hasR
         ...prev,
         [finding.id]: {
           status: 'ready',
-          rewrite,
-          ...(body.segment !== undefined ? { segment: body.segment } : {})
+          segmentOriginal: body.segment_original ?? finding.evidence,
+          segmentCorrige
         }
       }));
     } catch {
@@ -150,15 +163,26 @@ export function DocumentEditor({ auditId, targetLanguage, findings, labels, hasR
 
   function applySuggestion(findingId: string) {
     const s = suggestions[findingId];
-    if (!s?.rewrite) return;
-    // Best-effort segment swap: if the AI echoed back the offending
-    // segment, replace its first occurrence in the document. Otherwise
-    // append the rewrite at the end and let the user reconcile.
-    setText((current) => {
-      if (s.segment && current.includes(s.segment)) {
-        return current.replace(s.segment, s.rewrite!);
-      }
-      return `${current}\n\n${s.rewrite}`;
+    if (!s?.segmentCorrige) return;
+    const needle = s.segmentOriginal;
+    // Deterministic swap: the server guarantees segmentOriginal is the
+    // verbatim finding.evidence. If it's present in the textarea, swap
+    // its first occurrence. If it isn't (the user edited that part
+    // manually since the audit ran), surface an inline error rather
+    // than appending — appending is what produced duplicate paragraphs
+    // in v1 of the editor.
+    if (!needle || !text.includes(needle)) {
+      setSuggestions((prev) => ({
+        ...prev,
+        [findingId]: { status: 'error', errorCode: 'segment_not_found' }
+      }));
+      return;
+    }
+    setText((current) => current.replace(needle, s.segmentCorrige!));
+    setResolved((prev) => {
+      const next = new Set(prev);
+      next.add(findingId);
+      return next;
     });
     setSuggestions((prev) => {
       const next = { ...prev };
@@ -224,20 +248,28 @@ export function DocumentEditor({ auditId, targetLanguage, findings, labels, hasR
         </h2>
         {findings.map((f) => {
           const s = suggestions[f.id];
+          const isResolved = resolved.has(f.id);
+          const hasEvidence = f.evidence.trim().length > 0;
           return (
-            <Card key={f.id}>
+            <Card key={f.id} className={isResolved ? 'border-emerald-300/60 bg-emerald-50/40 dark:bg-emerald-950/10' : undefined}>
               <CardHeader className="pb-3">
                 <div className="flex flex-wrap items-center gap-2">
                   <Badge variant={f.severity === 'critical' ? 'destructive' : 'secondary'}>
                     {f.severity}
                   </Badge>
                   <span className="font-mono text-xs text-muted-foreground">{f.citation}</span>
+                  {isResolved && (
+                    <span className="ms-auto inline-flex items-center gap-1 text-xs font-medium text-emerald-700 dark:text-emerald-300">
+                      <CheckCircle2 className="h-3.5 w-3.5" aria-hidden />
+                      {labels.resolvedLabel}
+                    </span>
+                  )}
                 </div>
                 <CardTitle className="text-sm leading-snug">{f.title}</CardTitle>
               </CardHeader>
               <CardContent className="space-y-3 text-xs">
                 <p className="text-muted-foreground">{f.recommendation}</p>
-                {!s && (
+                {!s && !isResolved && hasEvidence && (
                   <Button
                     size="sm"
                     variant="outline"
@@ -249,19 +281,24 @@ export function DocumentEditor({ auditId, targetLanguage, findings, labels, hasR
                     {labels.rewriteCta}
                   </Button>
                 )}
+                {!s && !isResolved && !hasEvidence && (
+                  <p className="rounded-md border border-amber-200 bg-amber-50 px-2 py-1.5 text-amber-900 dark:border-amber-900/40 dark:bg-amber-950/30 dark:text-amber-200">
+                    {labels.noEvidenceAnchor}
+                  </p>
+                )}
                 {s?.status === 'loading' && (
                   <div className="flex items-center gap-2 text-muted-foreground">
                     <Loader2 className="h-3.5 w-3.5 animate-spin" aria-hidden />
                     {labels.rewriting}
                   </div>
                 )}
-                {s?.status === 'ready' && s.rewrite && (
+                {s?.status === 'ready' && s.segmentCorrige && (
                   <div className="grid gap-2">
                     <p className="text-[11px] uppercase tracking-wider text-muted-foreground">
                       {labels.rewriteHint}
                     </p>
                     <blockquote className="border-l-2 border-foreground/30 ps-3 text-pretty text-[13px]">
-                      {s.rewrite}
+                      {s.segmentCorrige}
                     </blockquote>
                     <div className="flex gap-2">
                       <Button size="sm" className="flex-1" onClick={() => applySuggestion(f.id)}>

@@ -6,21 +6,29 @@ import { supabaseService } from '@/lib/supabase';
 import { getCurrentUser, organizationIdFromUser } from '@/lib/supabase-server';
 
 /**
- * Per-finding AI rewrite endpoint.
+ * Per-finding AI clause-rewrite endpoint.
  *
- * Contract:
- *   - The caller posts { findingId, documentText, targetLanguage }.
- *   - We look up the finding to get its title, body, recommendation,
- *     and evidence span — the *server* owns the canonical text of the
- *     finding so a malicious client can't smuggle a different prompt
- *     into the rewrite call.
- *   - We ask Claude to (a) identify the offending segment in the
- *     supplied document text and (b) return a rewritten replacement
- *     plus the original segment we asked it to substitute. The client
- *     does the in-textarea swap.
- *   - The document text is NEVER persisted. Zero-Knowledge is
- *     preserved end-to-end: the bytes only exist in the request body
- *     for the duration of the Anthropic call.
+ * Architectural choice: the client posts ONLY a finding id (and the
+ * target language). The server reads the canonical offending clause
+ * (`finding.evidence`) and the violated rule (`finding.title`,
+ * `finding.body`, `finding.recommendation`) from Postgres. The
+ * document text is NOT sent over the wire — Claude rewrites the
+ * clause in isolation against the rule.
+ *
+ * Why server-canonical:
+ *   1. Cost / latency. The evidence quote is 1–3 sentences vs the
+ *      whole document (can be 200 KB). Token usage drops ~99 %.
+ *   2. Privacy. The rest of the document never leaves the database
+ *      to call this endpoint.
+ *   3. Tamper resistance. A malicious client cannot smuggle a
+ *      different rule or clause into the prompt — both come from
+ *      the persisted audit_findings row.
+ *   4. Determinism. The original segment we ship back is byte-for-
+ *      byte the evidence string, so the client's find-and-replace
+ *      can never miss (or duplicate) the swap target.
+ *
+ * Response shape (strict, JSON-only):
+ *   { segment_original: string, segment_corrige: string }
  *
  * Authentication:
  *   - The audit row's organization_id must match the caller's org,
@@ -35,7 +43,6 @@ const IP_LIMIT = { windowMs: 60 * 60 * 1000, max: 30 }; // 30/h per IP
 
 const Body = z.object({
   findingId: z.string().uuid(),
-  documentText: z.string().min(1).max(200_000),
   targetLanguage: z.string().min(2).max(10)
 });
 
@@ -111,43 +118,56 @@ export async function POST(
   }
   const finding = findingRaw as FindingRow;
 
-  // Single Sonnet call. Asks for strict JSON so we can parse the two
-  // fields the client needs — the original segment to swap and the
-  // suggested replacement — without leaving the LLM room to wrap the
-  // answer in prose.
+  // Empty evidence means the Multi-Pass pass-1 did not anchor this
+  // finding to a verbatim quote — there is nothing to find-and-replace
+  // in the document. Surface a distinct error so the UI can guide the
+  // user to apply the recommendation manually.
+  if (!finding.evidence || finding.evidence.trim().length === 0) {
+    return NextResponse.json({ error: 'no_evidence_anchor' }, { status: 422 });
+  }
+
+  // Strict-JSON Sonnet call. We send ONLY the offending clause and the
+  // rule that flagged it — never the rest of the document. The hard
+  // constraints below are the difference between a usable corporate
+  // tool and a hallucination machine.
   const system = [
-    'You are a senior compliance counsel rewriting policy and contract clauses.',
-    'You receive a flagged compliance finding plus the full source document.',
-    'Locate the offending clause in the document and produce a tighter, fully compliant replacement.',
-    'Respond with STRICT JSON only — no prose, no markdown fences — matching:',
-    '{"segment": "<verbatim text from the source document>", "rewrite": "<the corrected clause>"}',
-    'Constraints:',
-    '- The `segment` MUST be a verbatim substring of the document (so the client can find-and-replace it).',
-    '- The `rewrite` MUST be in the same language as the rest of the document, unless `targetLanguage` differs from the document language — in which case write the rewrite in `targetLanguage`.',
-    '- Keep tone, formality and length proportionate to the surrounding clause.',
-    '- Resolve the finding without introducing new obligations the document did not already cover.'
+    'You are a senior compliance counsel rewriting a single offending clause from a policy or contract.',
+    'You receive (a) the verbatim clause that was flagged by an automated compliance audit, and',
+    '(b) the compliance rule it violates (regulation citation, finding title, finding body, recommendation).',
+    '',
+    'Respond with STRICT JSON ONLY — no prose, no markdown fences, no commentary — matching:',
+    '{"segment_original": "<verbatim clause as received>", "segment_corrige": "<corrected clause>"}',
+    '',
+    'Hard constraints:',
+    '- `segment_original` MUST be byte-for-byte identical to the clause you received. Do not normalize whitespace, do not paraphrase.',
+    '- `segment_corrige` MUST resolve the compliance finding while preserving the legal tone, register, and structure of the original clause.',
+    '- DO NOT invent facts, names, addresses, phone numbers, emails, URLs, dates, or amounts that were not in the original clause or the recommendation.',
+    '- DO NOT introduce obligations the original document did not already cover. If the rule requires disclosing a Data Protection Officer, write a clause that REQUIRES disclosing one — do not fabricate a fictional officer.',
+    '- Write the rewrite in the requested target language.',
+    '- Keep the length of `segment_corrige` proportionate to `segment_original` — typically within 3× the original word count.'
   ].join('\n');
 
-  const user = [
-    `Finding (severity: ${finding.severity}, framework: ${finding.framework_id}):`,
-    `Title: ${finding.title}`,
-    `Body: ${finding.body}`,
-    `Recommendation: ${finding.recommendation}`,
-    `Evidence quote (from the original audit pass): "${finding.evidence}"`,
+  const userPrompt = [
+    `Target language: ${payload.targetLanguage}`,
     '',
-    `Target language for the rewrite: ${payload.targetLanguage}`,
+    'Compliance rule violated:',
+    `  Framework: ${finding.framework_id}`,
+    `  Severity:  ${finding.severity}`,
+    `  Title:     ${finding.title}`,
+    `  Body:      ${finding.body}`,
+    `  Recommended remediation: ${finding.recommendation}`,
     '',
-    'Document:',
-    payload.documentText
+    'Offending clause (verbatim — this is the segment_original you must echo back):',
+    finding.evidence
   ].join('\n');
 
   let rawText: string;
   try {
     const completion = await anthropic().messages.create({
       model: ANTHROPIC_MODEL,
-      max_tokens: 4096,
+      max_tokens: 2048,
       system,
-      messages: [{ role: 'user', content: user }]
+      messages: [{ role: 'user', content: userPrompt }]
     });
     const block = completion.content[0];
     if (!block || block.type !== 'text') {
@@ -160,25 +180,32 @@ export async function POST(
   }
 
   // Anthropic occasionally wraps strict-JSON outputs in a fenced block
-  // ("```json\n{...}\n```") despite the system prompt. Strip the
-  // fences before parsing.
+  // ("```json\n{...}\n```") despite the system prompt. Strip fences
+  // before parsing.
   const cleaned = rawText
     .trim()
     .replace(/^```(?:json)?\s*/i, '')
     .replace(/\s*```$/i, '');
 
-  let parsed: { segment?: unknown; rewrite?: unknown };
+  let parsed: { segment_original?: unknown; segment_corrige?: unknown };
   try {
-    parsed = JSON.parse(cleaned) as { segment?: unknown; rewrite?: unknown };
+    parsed = JSON.parse(cleaned) as { segment_original?: unknown; segment_corrige?: unknown };
   } catch {
     return NextResponse.json({ error: 'rewrite_unparseable', detail: rawText.slice(0, 200) }, { status: 502 });
   }
 
-  const segment = typeof parsed.segment === 'string' ? parsed.segment : undefined;
-  const rewrite = typeof parsed.rewrite === 'string' ? parsed.rewrite : undefined;
-  if (!rewrite) {
+  const segmentCorrige =
+    typeof parsed.segment_corrige === 'string' ? parsed.segment_corrige : undefined;
+  if (!segmentCorrige) {
     return NextResponse.json({ error: 'rewrite_empty' }, { status: 502 });
   }
 
-  return NextResponse.json({ rewrite, segment });
+  // We trust the server-side evidence for the swap target, not what
+  // the model echoed back — guards against models that drift on the
+  // "byte-for-byte" instruction. The client uses segment_original to
+  // locate the clause in the editor textarea.
+  return NextResponse.json({
+    segment_original: finding.evidence,
+    segment_corrige: segmentCorrige
+  });
 }

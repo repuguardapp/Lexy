@@ -24,7 +24,17 @@ describe('frameworksForCountry', () => {
     expect(frameworksForCountry('XX').length).toBe(0);
   });
 
-  it('exposes seven distinct frameworks', () => {
+  it('exposes only distinct framework IDs', () => {
     expect(new Set(FRAMEWORKS.map((f) => f.id)).size).toBe(FRAMEWORKS.length);
+  });
+
+  it('covers all six GCC member states', () => {
+    for (const cc of ['SA', 'AE', 'BH', 'KW', 'OM', 'QA']) {
+      expect(frameworksForCountry(cc).length).toBeGreaterThan(0);
+    }
+  });
+
+  it('returns Qatar PDPPL for QA', () => {
+    expect(frameworksForCountry('QA').map((f) => f.id)).toContain('qatar_pdppl');
   });
 });

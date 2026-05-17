@@ -64,6 +64,109 @@ function sha256(text: string): string {
 /* Pass 1 — legal audit in English (canonical pivot)                  */
 /* ------------------------------------------------------------------ */
 
+/**
+ * Per-framework guidance injected into the system prompt. Only
+ * frameworks with non-obvious specificities the base prompt would
+ * miss live here — vanilla GDPR-style rules don't need a block.
+ *
+ * Why bullet form: the model treats each bullet as an independent
+ * "must check" rule. Paragraphs get summarised; bullets get scanned.
+ */
+const FRAMEWORK_GUIDANCE: Partial<Record<FrameworkId, readonly string[]>> = {
+  qatar_pdppl: [
+    'Qatar PDPPL (Law No. 13 of 2016) — apply the following rules with extra scrutiny:',
+    '  * MARKETING CONSENT: Article 17 mandates a strict opt-in for any direct',
+    '    marketing communication (email, SMS, calls, push). Pre-ticked boxes,',
+    '    "negative-option" wording, bundled consent with ToS acceptance, or any',
+    '    form of implicit/inferred consent are NON-COMPLIANT — flag as critical.',
+    '    Withdrawal must be as easy as opt-in and free of charge.',
+    '  * MINORS DATA: Personal data of individuals under 18 requires verifiable',
+    '    parental/guardian consent before any processing. Absence of an age-gate,',
+    '    of a parental consent flow, or of stricter safeguards (data minimisation,',
+    '    no profiling, no behavioural advertising) → flag as high or critical.',
+    '  * SANCTIONS: Non-compliance exposes the controller to administrative fines',
+    '    up to QAR 5,000,000 (≈ USD 1.37M) under Articles 22-25, with possible',
+    '    daily-accruing penalties and operational suspension by the NCSA. In the',
+    '    "recommendation" field, when a finding is severity=critical, cite this',
+    '    financial exposure explicitly to convey business urgency.'
+  ],
+  saudi_pdpl: [
+    'Saudi PDPL (Royal Decree M/19, amended 2023) — Kingdom-specific rules:',
+    '  * EXPLICIT CONSENT + PURPOSE LIMITATION: Articles 5-6 require explicit',
+    '    written or electronic consent per purpose. Bundling consents or vague',
+    '    purposes ("to improve our services") are non-compliant — flag as high.',
+    '  * CROSS-BORDER TRANSFERS: Article 29 restricts transfers outside KSA',
+    '    unless to a country with adequate protection (SDAIA whitelist) OR with',
+    '    SDAIA approval. Flag any transfer to a non-adequate jurisdiction as',
+    '    critical when no safeguard (SCC equivalent, BCR, derogation) is named.',
+    '  * MINORS DATA: parental consent required for data subjects under 18.',
+    '  * SANCTIONS: fines up to SAR 5,000,000 (≈ USD 1.33M), doubled for repeat',
+    '    offences (max SAR 10M), plus criminal penalties for unlawful disclosure',
+    '    of sensitive data (up to 2 years imprisonment). Cite the SAR exposure',
+    '    on critical findings.'
+  ],
+  uae_pdpl: [
+    'UAE PDPL (Federal Decree-Law 45/2021) — federal-level rules; DIFC and ADGM',
+    'have their own regimes which this audit does not cover unless requested:',
+    '  * CONSENT QUALITY: Article 6 requires consent be specific, clear and',
+    '    unambiguous, and as easy to withdraw as to give. Implicit/pre-ticked',
+    '    consent is non-compliant.',
+    '  * MARKETING: Article 13 — direct marketing requires prior opt-in consent;',
+    '    every message must include an opt-out mechanism and the controller',
+    '    identity. Missing either → flag as high.',
+    '  * MINORS: data of individuals under 18 requires guardian consent and',
+    '    age-appropriate disclosures.',
+    '  * DATA SUBJECT RIGHTS: rights to access, correction, deletion, transfer,',
+    '    restriction and objection must be implemented with a 30-day response',
+    '    SLA. Absence of a documented response process → flag as high.',
+    '  * SANCTIONS: the implementing regulations empower the UAE Data Office to',
+    '    impose administrative fines and remedial orders; cite enforcement risk',
+    '    in critical findings.'
+  ],
+  bahrain_pdpl: [
+    'Bahrain PDPL (Law No. 30 of 2018) — early-mover Gulf law, GDPR-adjacent:',
+    '  * LAWFUL BASIS: Article 4 enumerates the legal bases; "legitimate',
+    '    interest" is NOT among them — controllers cannot rely on it. Flag any',
+    '    processing justified by legitimate interest as critical.',
+    '  * MARKETING: Article 23 mandates prior opt-in for direct marketing and a',
+    '    free, accessible opt-out in every communication.',
+    '  * MINORS: parental consent required for individuals under 18.',
+    '  * SANCTIONS: criminal penalties — up to BHD 20,000 fines AND up to 1',
+    '    year imprisonment per Articles 56-61 for serious breaches (sensitive',
+    '    data, unlawful cross-border transfer). Cite the criminal exposure in',
+    '    critical findings.'
+  ],
+  kuwait_dppr: [
+    'Kuwait DPPR (CITRA Resolution 26/2024) — sectoral telecoms-led regulation',
+    'extended to all data controllers:',
+    '  * CONSENT: opt-in is mandatory for personal data processing outside the',
+    '    legitimate-contract exception. Marketing consent must be separable from',
+    '    service consent.',
+    '  * DATA LOCALISATION: storage and processing of citizens\' personal data',
+    '    should occur in Kuwait by default; cross-border transfer requires CITRA',
+    '    notification and adequate safeguards. Flag unsafeguarded transfers as',
+    '    critical.',
+    '  * MINORS: guardian consent required under 18.',
+    '  * SANCTIONS: CITRA may impose administrative fines and licence',
+    '    suspension. Cite operational-disruption risk on critical findings.'
+  ],
+  oman_pdpl: [
+    'Oman PDPL (Royal Decree 6/2022) — sultanate-wide regime:',
+    '  * PERMIT-BASED PROCESSING: Article 5 — processing sensitive personal',
+    '    data (health, biometrics, genetic, race, religion) requires a permit',
+    '    from MTCIT. Absence of a permit reference for such processing → flag',
+    '    as critical.',
+    '  * MARKETING: explicit opt-in only; absence of opt-out mechanism in any',
+    '    marketing comm → flag as high.',
+    '  * MINORS: under-18 data requires parental consent and minimisation.',
+    '  * CROSS-BORDER: transfers outside Oman require subject consent OR an',
+    '    adequacy assessment.',
+    '  * SANCTIONS: administrative fines up to OMR 500,000 (≈ USD 1.3M) per',
+    '    Articles 27-29, with criminal penalties for sensitive-data offences.',
+    '    Cite the OMR exposure on critical findings.'
+  ]
+};
+
 function buildAuditSystemPrompt(frameworks: FrameworkId[]): string {
   const lines = [
     'You are LexyFlow, a senior compliance auditor at a Tier-1 RegTech firm.',
@@ -77,6 +180,17 @@ function buildAuditSystemPrompt(frameworks: FrameworkId[]): string {
     if (!f) continue;
     lines.push(`- ${f.name} (${f.jurisdiction}) — citation style: ${f.citationStyle}`);
   }
+
+  const guidanceBlocks = frameworks
+    .map((id) => FRAMEWORK_GUIDANCE[id])
+    .filter((b): b is readonly string[] => !!b);
+  if (guidanceBlocks.length > 0) {
+    lines.push('', 'Framework-specific guidance:');
+    for (const block of guidanceBlocks) {
+      lines.push(...block);
+    }
+  }
+
   lines.push(
     '',
     'Submit your findings via the submit_audit tool. The tool input schema',

@@ -42,15 +42,27 @@ export default async function PricingPage({ params: { locale }, searchParams }: 
     : null;
   const reasonMessage = reason ? t(`reasons.${reason}`) : null;
 
+  // Indicative prices per plan / currency. Numbers are rounded to a
+  // round-looking local figure in each market (185 EUR, not 184.30)
+  // because /pricing is a marketing surface — Stripe Checkout applies
+  // the canonical price from the Price ID at the moment of purchase.
+  // AED is pegged to USD at ~3.67; GCC is a premium market so we
+  // price at near-parity with USD without a discount.
   const indicativePrices: Record<typeof PLANS[number], Record<string, number>> = {
-    starter:    { USD: 49,  EUR: 45,  BRL: 249, JPY: 7_300, GBP: 39 },
-    pro:        { USD: 199, EUR: 185, BRL: 990, JPY: 29_500, GBP: 159 },
-    enterprise: { USD: 599, EUR: 549, BRL: 2_990, JPY: 89_000, GBP: 479 }
+    starter:    { USD: 49,  EUR: 45,  BRL: 249,   JPY: 7_300,  GBP: 39,  AED: 180 },
+    pro:        { USD: 199, EUR: 185, BRL: 990,   JPY: 29_500, GBP: 159, AED: 730 },
+    enterprise: { USD: 599, EUR: 549, BRL: 2_990, JPY: 89_000, GBP: 479, AED: 2_200 }
   };
 
+  // Fallback to USD when the descriptor's currency isn't in our price
+  // matrix — protects against shipping a new locale whose currency we
+  // forgot to price (avoids the "0 د.إ" footgun that landed in prod).
+  const priced = indicativePrices.starter[descriptor.currency] !== undefined
+    ? descriptor.currency
+    : 'USD';
   const formatter = new Intl.NumberFormat(locale, {
     style: 'currency',
-    currency: descriptor.currency,
+    currency: priced,
     maximumFractionDigits: 0
   });
 
@@ -84,7 +96,7 @@ export default async function PricingPage({ params: { locale }, searchParams }: 
             <CardContent>
               <div className="flex items-baseline gap-1">
                 <span className="text-4xl font-semibold tracking-tight tabular-nums">
-                  {formatter.format(indicativePrices[plan][descriptor.currency] ?? 0)}
+                  {formatter.format(indicativePrices[plan][priced] ?? 0)}
                 </span>
                 <span className="text-sm text-muted-foreground">{t('perMonth')}</span>
               </div>

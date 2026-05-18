@@ -79,7 +79,7 @@ async function Hero({
           <Button asChild size="lg">
             <Link href="/audit">
               {t('hero.cta')}
-              <ArrowRight className="ms-2 h-4 w-4" aria-hidden />
+              <ArrowRight className="ms-2 h-4 w-4 rtl:-scale-x-100" aria-hidden />
             </Link>
           </Button>
           <Button asChild size="lg" variant="outline">

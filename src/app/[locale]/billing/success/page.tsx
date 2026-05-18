@@ -77,7 +77,7 @@ export default async function BillingSuccessPage({
         {credits !== null && credits > 0 && (
           <div className="mx-auto inline-flex items-center gap-3 rounded-lg border border-green-500/30 bg-green-500/5 px-4 py-3 text-sm">
             <Coins className="h-5 w-5 flex-none text-green-600 dark:text-green-400" aria-hidden />
-            <div className="text-left">
+            <div className="text-start">
               <div className="font-medium text-foreground">{t('creditsAdded')}</div>
               <div className="text-muted-foreground">
                 {t('creditsAvailable', { count: credits })}

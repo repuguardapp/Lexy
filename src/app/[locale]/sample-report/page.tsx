@@ -55,7 +55,7 @@ export default async function SampleReportPage({ params: { locale } }: PageProps
     <div className="mx-auto max-w-3xl py-16">
       <Button asChild variant="ghost" size="sm" className="-ms-3">
         <Link href="/">
-          <ArrowLeft className="me-2 h-4 w-4" />
+          <ArrowLeft className="me-2 h-4 w-4 rtl:-scale-x-100" />
           Back
         </Link>
       </Button>

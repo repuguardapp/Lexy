@@ -16,7 +16,13 @@ const COUNTRY_TO_LOCALE: Record<string, string> = {
   // Portuguese (Brazil)
   BR: 'pt-br',
   // Japanese
-  JP: 'ja'
+  JP: 'ja',
+  // Arabic — GCC bloc as primary target market (cf. legal-frameworks.ts),
+  // plus the most common Arabic-speaking business hubs. ISO-3166 AR is
+  // Argentina (mapped to 'es' above) — no clash, the country-code and
+  // language-tag namespaces are distinct.
+  SA: 'ar', AE: 'ar', QA: 'ar', BH: 'ar', KW: 'ar', OM: 'ar',
+  EG: 'ar', JO: 'ar', LB: 'ar'
 };
 
 interface LanguageRange {

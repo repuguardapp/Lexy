@@ -1,7 +1,7 @@
 import { beforeAll, describe, expect, it, vi } from 'vitest';
 
 vi.mock('../src/i18n/locales.server', () => ({
-  discoverLocales: async () => ['en', 'fr', 'es', 'de', 'pt-br', 'ja']
+  discoverLocales: async () => ['en', 'fr', 'es', 'de', 'pt-br', 'ja', 'ar']
 }));
 vi.mock('server-only', () => ({}));
 
@@ -15,8 +15,9 @@ describe('buildHreflangAlternates', () => {
   it('emits one entry per locale plus x-default', async () => {
     const alts = await buildHreflangAlternates('/pricing');
     expect(Object.keys(alts).sort()).toEqual(
-      ['de', 'en', 'es', 'fr', 'ja', 'pt-br', 'x-default'].sort()
+      ['ar', 'de', 'en', 'es', 'fr', 'ja', 'pt-br', 'x-default'].sort()
     );
+    expect(alts['ar']).toBe('https://compliance.example.com/ar/pricing');
     expect(alts['fr']).toBe('https://compliance.example.com/fr/pricing');
     expect(alts['x-default']).toContain('/en/pricing');
   });

@@ -77,7 +77,7 @@ export default async function SecurityActivityPage({ params }: PageProps) {
       <div className="mb-6">
         <Button asChild variant="ghost" size="sm" className="-ms-3">
           <Link href="/dashboard">
-            <ArrowLeft className="me-2 h-4 w-4" />
+            <ArrowLeft className="me-2 h-4 w-4 rtl:-scale-x-100" />
             {t('back')}
           </Link>
         </Button>

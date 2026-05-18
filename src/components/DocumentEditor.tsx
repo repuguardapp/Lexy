@@ -297,7 +297,7 @@ export function DocumentEditor({
                     <p className="text-[11px] uppercase tracking-wider text-muted-foreground">
                       {labels.rewriteHint}
                     </p>
-                    <blockquote className="border-l-2 border-foreground/30 ps-3 text-pretty text-[13px]">
+                    <blockquote className="border-s-2 border-foreground/30 ps-3 text-pretty text-[13px]">
                       {s.segmentCorrige}
                     </blockquote>
                     <div className="flex gap-2">

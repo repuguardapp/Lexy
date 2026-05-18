@@ -144,6 +144,7 @@ export async function POST(
     '- DO NOT invent facts, names, addresses, phone numbers, emails, URLs, dates, or amounts that were not in the original clause or the recommendation.',
     '- DO NOT introduce obligations the original document did not already cover. If the rule requires disclosing a Data Protection Officer, write a clause that REQUIRES disclosing one — do not fabricate a fictional officer.',
     '- Write the rewrite in the requested target language.',
+    '- For RTL targets (Arabic, Hebrew, Persian, Urdu): use Modern Standard register, keep numerals in Latin digits (1, 2, 3) so article numbers stay legible inside an RTL paragraph, and emit no Unicode bidi control characters.',
     '- Keep the length of `segment_corrige` proportionate to `segment_original` — typically within 3× the original word count.'
   ].join('\n');
 

@@ -14,7 +14,8 @@ export type LocaleCode =
   | 'es'
   | 'de'
   | 'pt-br'
-  | 'ja';
+  | 'ja'
+  | 'ar';
 
 export interface LocaleDescriptor {
   code: string;
@@ -24,7 +25,7 @@ export interface LocaleDescriptor {
   region: string;
   direction: 'ltr' | 'rtl';
   /** Default ISO-4217 currency for Stripe checkout. */
-  currency: 'USD' | 'EUR' | 'BRL' | 'JPY' | 'GBP';
+  currency: 'USD' | 'EUR' | 'BRL' | 'JPY' | 'GBP' | 'AED';
   /** Stripe Checkout `locale` param (subset of supported codes). */
   stripeLocale: string;
 }
@@ -35,7 +36,10 @@ export const NATIVE_LOCALES: readonly LocaleDescriptor[] = [
   { code: 'es',    endonym: 'Español',    region: 'ES', direction: 'ltr', currency: 'EUR', stripeLocale: 'es' },
   { code: 'de',    endonym: 'Deutsch',    region: 'DE', direction: 'ltr', currency: 'EUR', stripeLocale: 'de' },
   { code: 'pt-br', endonym: 'Português',  region: 'BR', direction: 'ltr', currency: 'BRL', stripeLocale: 'pt-BR' },
-  { code: 'ja',    endonym: '日本語',      region: 'JP', direction: 'ltr', currency: 'JPY', stripeLocale: 'ja' }
+  { code: 'ja',    endonym: '日本語',      region: 'JP', direction: 'ltr', currency: 'JPY', stripeLocale: 'ja' },
+  // Arabic — RTL. Endonym in MSA. Region tags AE (GCC market lead);
+  // Stripe Checkout has no native 'ar', so 'auto' lets it negotiate.
+  { code: 'ar',    endonym: 'العربية',     region: 'AE', direction: 'rtl', currency: 'AED', stripeLocale: 'auto' }
 ];
 
 export const NATIVE_LOCALE_CODES = NATIVE_LOCALES.map((l) => l.code);

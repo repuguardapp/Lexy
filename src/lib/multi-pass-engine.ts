@@ -328,6 +328,14 @@ export async function localizeReport(
           'findings[].recommendation. Keep array length and order identical.',
           'Do NOT translate citations, framework names, statute numbers, or',
           'evidence quotations — those are passed through unchanged.',
+          // RTL targets (Arabic, Hebrew, Persian, Urdu): use Modern Standard
+          // register, Latin numerals (1, 2, 3) so article numbers and dates
+          // stay legible inside an RTL paragraph, and never emit Unicode
+          // bidi control marks (U+202A..U+202E, U+2066..U+2069). Glyph
+          // direction is handled by the HTML dir attribute downstream.
+          'For Arabic / Hebrew / Persian / Urdu output: use Modern Standard',
+          'register, keep numerals in Latin digits, and emit no bidi control',
+          'characters.',
           'Return JSON exactly matching the input shape.'
         ].join(' ')
       },

@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { detectLocale } from '../src/lib/locale-detection';
-import { NATIVE_LOCALE_CODES } from '../src/i18n/locales';
+import { NATIVE_LOCALE_CODES, NATIVE_LOCALES, getLocaleDescriptor } from '../src/i18n/locales';
 
 const available = NATIVE_LOCALE_CODES;
 
@@ -40,5 +40,24 @@ describe('detectLocale', () => {
         availableLocales: available
       })
     ).toBe('en');
+  });
+});
+
+describe('Arabic locale descriptor', () => {
+  it('exposes ar with rtl direction', () => {
+    const ar = NATIVE_LOCALES.find((l) => l.code === 'ar');
+    expect(ar).toBeDefined();
+    expect(ar?.direction).toBe('rtl');
+  });
+
+  it('routes GCC countries to ar', () => {
+    for (const cc of ['SA', 'AE', 'QA', 'BH', 'KW', 'OM']) {
+      expect(detectLocale({ acceptLanguage: null, countryHeader: cc, availableLocales: available })).toBe('ar');
+    }
+  });
+
+  it('infers rtl direction from script subtag for unknown locales', () => {
+    expect(getLocaleDescriptor('fa-IR').direction).toBe('ltr');
+    expect(getLocaleDescriptor('ur-arab').direction).toBe('rtl');
   });
 });

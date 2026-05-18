@@ -106,7 +106,7 @@ export default async function AuditDetailPage({ params }: PageProps) {
       <div className="mb-8 flex items-center justify-between gap-4 print:hidden">
         <Button asChild variant="ghost" size="sm" className="-ms-3">
           <Link href="/dashboard">
-            <ArrowLeft className="me-2 h-4 w-4" />
+            <ArrowLeft className="me-2 h-4 w-4 rtl:-scale-x-100" />
             {t('back')}
           </Link>
         </Button>
@@ -220,7 +220,7 @@ export default async function AuditDetailPage({ params }: PageProps) {
               <CardContent className="space-y-3 text-sm">
                 <p className="text-pretty">{f.body}</p>
                 {f.evidence && (
-                  <blockquote className="border-l-2 border-muted-foreground/30 ps-3 italic text-muted-foreground">
+                  <blockquote className="border-s-2 border-muted-foreground/30 ps-3 italic text-muted-foreground">
                     &ldquo;{f.evidence}&rdquo;
                   </blockquote>
                 )}

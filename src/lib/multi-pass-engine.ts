@@ -200,7 +200,24 @@ function buildAuditSystemPrompt(frameworks: FrameworkId[]): string {
     'Rules:',
     '- Write in English. Translation is performed in a later pass.',
     '- Never invent quotes. Every "evidence" must be verbatim from the doc.',
-    '- Citations stay in the original language of the regulation.'
+    '- Citations stay in the original language of the regulation.',
+    // Summary↔findings consistency contract — without this, observed
+    // failure mode in prod (Qatar PDPPL audit, May 2026): the model
+    // wrote a 4-sentence executive summary listing 3 concrete
+    // violations and shipped findings: [], leaving the editor with
+    // nothing to remediate. The summary is a SYNTHESIS of findings,
+    // never a substitute.
+    '- The "summary" field is a synthesis of the findings array, not a',
+    '  substitute for it. EVERY compliance issue you mention in the',
+    '  summary MUST appear as a structured entry in findings[]. If you',
+    '  cannot ground an issue in a verbatim evidence quote, do not put',
+    '  it in the summary either.',
+    '- An empty findings[] is only valid when the document is fully',
+    '  compliant. In that case the summary must say so explicitly and',
+    '  riskScore must be ≤ 10.',
+    '- riskScore must reflect the findings: zero findings → riskScore',
+    '  ≤ 10; any critical finding → riskScore ≥ 70; any high finding',
+    '  → riskScore ≥ 40.'
   );
   return lines.join('\n');
 }
@@ -280,7 +297,24 @@ export async function legalAudit(input: AuditInput): Promise<AuditPassResult> {
   if (!parsed.success) {
     throw new Error(`Audit tool input failed Zod validation: ${parsed.error.message}`);
   }
-  return parsed.data;
+
+  // Self-consistency check — Pass 1 sometimes ships a summary that
+  // describes specific violations while leaving findings[] empty,
+  // producing a report the editor cannot remediate. The prompt now
+  // forbids this; the code refuses it. Throwing here lets the
+  // outer audit route refund the credit / surface a useful error
+  // instead of persisting a misleading "0 findings, 62/100 risk"
+  // report. Threshold of 25 is conservative (one medium finding is
+  // typically scored 30+); anything cleaner than that we let pass.
+  const r = parsed.data;
+  if (r.findings.length === 0 && r.riskScore > 25) {
+    throw new Error(
+      `Pass 1 inconsistency: riskScore=${r.riskScore} with 0 findings. ` +
+      `Summary excerpt: "${r.summary.slice(0, 160)}…". ` +
+      `Refusing to persist a report that flags risk without listing it.`
+    );
+  }
+  return r;
 }
 
 /* ------------------------------------------------------------------ */

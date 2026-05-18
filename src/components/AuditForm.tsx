@@ -59,6 +59,13 @@ export interface AuditFormLabels {
 interface Props {
   labels: AuditFormLabels;
   frameworks: FrameworkOption[];
+  /**
+   * Framework IDs pre-selected on render. Typically computed from the
+   * org's country (`frameworksForCountry`) so a Saudi user lands on
+   * /audit with `saudi_pdpl` already checked. Empty array → user picks
+   * everything manually.
+   */
+  defaultFrameworkIds?: readonly string[];
   defaultLanguage: string;
   /** Stamped from the server-rendered page so we don't trust the client. */
   organizationId: string;
@@ -127,7 +134,14 @@ class AuditError extends Error {
  * Success has no UI state because we navigate away the moment the
  * fetch resolves — see `window.location.assign(body.redirect)` below.
  */
-export function AuditForm({ labels, frameworks, defaultLanguage, organizationId, locale }: Props) {
+export function AuditForm({
+  labels,
+  frameworks,
+  defaultFrameworkIds = [],
+  defaultLanguage,
+  organizationId,
+  locale
+}: Props) {
   // Prefix a path returned by the audit API with the active UI locale
   // unless it already carries one. Idempotent — calling it twice on
   // `/ar/dashboard/x` still yields `/ar/dashboard/x`.
@@ -273,7 +287,13 @@ export function AuditForm({ labels, frameworks, defaultLanguage, organizationId,
       </Field>
 
       <Field label={labels.framework}>
-        <select name="frameworks" required multiple className={cn(inputClass, 'min-h-[8rem]')}>
+        <select
+          name="frameworks"
+          required
+          multiple
+          defaultValue={defaultFrameworkIds as string[]}
+          className={cn(inputClass, 'min-h-[8rem]')}
+        >
           {frameworks.map((f) => (
             <option key={f.id} value={f.id}>
               {f.name}

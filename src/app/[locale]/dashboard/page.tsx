@@ -89,7 +89,13 @@ export default async function DashboardPage({
 
   return (
     <div className="py-12">
-      {tier === 'free' && (
+      {tier === 'free' && credits === 0 && (
+        // Trial banner shows only for free-tier orgs with ZERO credits
+        // available. A free-tier org that purchased a credit top-up
+        // (no subscription, but credits > 0) is operationally paying
+        // by the audit — calling that "trial mode" misrepresents
+        // their state. We still nudge them to subscribe, but via the
+        // morphic "buyCredits" CTA above, not via a banner.
         <div className="mb-6 flex flex-wrap items-center gap-3 rounded-lg border border-amber-300 bg-amber-50 px-4 py-3 text-sm dark:border-amber-900/40 dark:bg-amber-950/30">
           <Sparkles className="h-4 w-4 flex-shrink-0 text-amber-600" aria-hidden />
           <span className="flex-1 text-amber-900 dark:text-amber-200">

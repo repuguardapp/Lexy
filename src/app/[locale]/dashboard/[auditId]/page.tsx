@@ -10,6 +10,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { supabaseService } from '@/lib/supabase';
 import { createSupabaseServerClient, getCurrentUser, organizationIdFromUser } from '@/lib/supabase-server';
 import { getTierForOrg } from '@/lib/tier';
+import { NATIVE_LOCALE_CODES } from '@/i18n/locales';
 import type { Severity } from '@/types/audit';
 
 export const dynamic = 'force-dynamic';
@@ -66,6 +67,28 @@ export default async function AuditDetailPage({ params }: PageProps) {
 
   if (!audit) notFound();
   const a = audit as AuditDetailRow;
+
+  // Chrome-content language alignment: when the report was generated
+  // in a native locale we ship (a.language) but the URL was served
+  // under a different locale (params.locale), the user sees report
+  // body text in language X but every button, header and CTA in
+  // language Y. The "Unlock the AI editor" → /<urlLocale>/pricing
+  // mismatch is the most visible symptom. Server-redirect so the URL
+  // always reflects the report's language.
+  //
+  // Exception: anonymous-org audits are share-link contracts. The
+  // sharer's URL choice is intentional (a French CISO sharing a
+  // demo with English colleagues uses /en/dashboard/<id> on purpose).
+  // We don't second-guess the sharer.
+  const auditLang = (a.language ?? '').toLowerCase();
+  if (
+    a.organization_id !== ANONYMOUS_ORG_ID &&
+    auditLang &&
+    auditLang !== params.locale &&
+    (NATIVE_LOCALE_CODES as readonly string[]).includes(auditLang)
+  ) {
+    redirect(`/${auditLang}/dashboard/${params.auditId}`);
+  }
 
   // Auth gate: anonymous-org reports are public-by-UUID; everything
   // else requires a logged-in user. We deliberately do not check that

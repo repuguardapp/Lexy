@@ -6,6 +6,7 @@ import { Button } from '@/components/ui/button';
 import { supabaseService } from '@/lib/supabase';
 import { createSupabaseServerClient, getCurrentUser, organizationIdFromUser } from '@/lib/supabase-server';
 import { getTierForOrg } from '@/lib/tier';
+import { NATIVE_LOCALE_CODES } from '@/i18n/locales';
 import type { Severity } from '@/types/audit';
 
 export const dynamic = 'force-dynamic';
@@ -61,6 +62,20 @@ export default async function AuditEditPage({ params }: PageProps) {
     document_ciphertext: string | null;
   };
   const hasRetainedDocument = a.document_ciphertext !== null;
+
+  // Mirror the report-page chrome alignment: if the audit was
+  // generated in a native locale we ship and the URL was served
+  // under a different one, redirect so the editor UI matches the
+  // language of the clauses we'll be rewriting.
+  const auditLang = (a.language ?? '').toLowerCase();
+  if (
+    a.organization_id !== ANONYMOUS_ORG_ID &&
+    auditLang &&
+    auditLang !== params.locale &&
+    (NATIVE_LOCALE_CODES as readonly string[]).includes(auditLang)
+  ) {
+    redirect(`/${auditLang}/dashboard/${params.auditId}/edit`);
+  }
 
   if (a.organization_id !== ANONYMOUS_ORG_ID) {
     const user = await getCurrentUser();

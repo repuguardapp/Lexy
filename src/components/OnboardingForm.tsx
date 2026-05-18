@@ -4,21 +4,6 @@ import { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { NATIVE_LOCALES } from '@/i18n/locales';
 
-const COUNTRIES: Array<{ code: string; name: string }> = [
-  { code: 'US', name: 'United States' },
-  { code: 'GB', name: 'United Kingdom' },
-  { code: 'FR', name: 'France' },
-  { code: 'DE', name: 'Germany' },
-  { code: 'ES', name: 'Spain' },
-  { code: 'IT', name: 'Italy' },
-  { code: 'NL', name: 'Netherlands' },
-  { code: 'IE', name: 'Ireland' },
-  { code: 'BE', name: 'Belgium' },
-  { code: 'CA', name: 'Canada' },
-  { code: 'BR', name: 'Brazil' },
-  { code: 'JP', name: 'Japan' }
-];
-
 /**
  * All UX strings the form renders. Built server-side by the onboarding
  * page and passed in as a single object — keeps the client bundle free
@@ -44,6 +29,17 @@ interface Props {
   locale: string;
   userEmail: string;
   labels: OnboardingLabels;
+  /**
+   * Country list with names already localised on the server via
+   * `Intl.DisplayNames(locale)`. We resolve names server-side so the
+   * client bundle doesn't depend on the CLDR data and so SSR markup
+   * matches client render exactly. Pre-sorted alphabetically in the
+   * target locale's collation.
+   */
+  countries: ReadonlyArray<{ code: string; name: string }>;
+  /** Country code pre-selected in the dropdown — defaults to the
+   *  largest market for the active locale (e.g. SA for Arabic). */
+  defaultCountry: string;
 }
 
 /**
@@ -67,7 +63,7 @@ function renderSignedInAs(template: string, email: string) {
   );
 }
 
-export function OnboardingForm({ locale, userEmail, labels }: Props) {
+export function OnboardingForm({ locale, userEmail, labels, countries, defaultCountry }: Props) {
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -122,8 +118,8 @@ export function OnboardingForm({ locale, userEmail, labels }: Props) {
       </Field>
 
       <Field label={labels.country} hint={labels.countryHint}>
-        <select name="country" defaultValue="FR" required className={inputClass}>
-          {COUNTRIES.map((c) => (
+        <select name="country" defaultValue={defaultCountry} required className={inputClass}>
+          {countries.map((c) => (
             <option key={c.code} value={c.code}>
               {c.name}
             </option>

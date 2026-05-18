@@ -265,6 +265,16 @@
     "contactDpoLabel": "DPO / الخصوصية",
     "responsibleDisclosure": "صيغة RFC 9116 لباحثي الأمان"
   },
+  "sampleReport": {
+    "back": "رجوع",
+    "badge": "تقرير نموذجي",
+    "title": "تدقيق سياسة الخصوصية — {org}",
+    "subtitle": "أنشأه LexyFlow في {seconds} ثانية. {count, plural, zero {بدون مرجعية} one {مرجعية واحدة متقاطعة} two {مرجعيتان متقاطعتان} few {# مرجعيات متقاطعة} many {# مرجعية متقاطعة} other {# مرجعية متقاطعة}}. درجة الخطر: {score} / 100.",
+    "findings": "الملاحظات",
+    "recommendation": "التوصية",
+    "footerBody": "تتضمّن التقارير الفعلية أدلّة من الوثيقة المصدر، وجدولاً زمنياً للمعالجة، وPDF قابلاً للتنزيل — بأكثر من 100 لغة.",
+    "footerCta": "أجرِ تدقيقاً على وثيقتك"
+  },
   "dashboard": {
     "title": "عمليات التدقيق",
     "signedInAs": "متّصل باسم <bold>{email}</bold>.",

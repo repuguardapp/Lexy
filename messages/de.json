@@ -265,6 +265,16 @@
     "contactDpoLabel": "DSB / Datenschutz",
     "responsibleDisclosure": "RFC 9116-Format für Sicherheitsforscher"
   },
+  "sampleReport": {
+    "back": "Zurück",
+    "badge": "Beispielbericht",
+    "title": "Datenschutzrichtlinien-Audit — {org}",
+    "subtitle": "Erstellt von LexyFlow in {seconds} Sekunden. {count, plural, one {# Rahmenwerk gegengeprüft} other {# Rahmenwerke gegengeprüft}}. Risikobewertung: {score} / 100.",
+    "findings": "Befunde",
+    "recommendation": "Empfehlung",
+    "footerBody": "Echte Berichte enthalten Belege aus dem Quelldokument, einen Maßnahmenplan und ein herunterladbares PDF — in über 100 Sprachen.",
+    "footerCta": "Audit auf eigenem Dokument starten"
+  },
   "dashboard": {
     "title": "Audits",
     "signedInAs": "Angemeldet als <bold>{email}</bold>.",

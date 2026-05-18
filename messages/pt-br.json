@@ -265,6 +265,16 @@
     "contactDpoLabel": "DPO / privacidade",
     "responsibleDisclosure": "Formato RFC 9116 para pesquisadores de segurança"
   },
+  "sampleReport": {
+    "back": "Voltar",
+    "badge": "Relatório de exemplo",
+    "title": "Auditoria da política de privacidade — {org}",
+    "subtitle": "Gerado pelo LexyFlow em {seconds} segundos. {count, plural, one {# referencial cruzado} other {# referenciais cruzados}}. Pontuação de risco: {score} / 100.",
+    "findings": "Achados",
+    "recommendation": "Recomendação",
+    "footerBody": "Os relatórios reais incluem evidências do documento de origem, um cronograma de remediação e um PDF para download — em mais de 100 idiomas.",
+    "footerCta": "Executar auditoria no seu próprio documento"
+  },
   "dashboard": {
     "title": "Auditorias",
     "signedInAs": "Conectado como <bold>{email}</bold>.",

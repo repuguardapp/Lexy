@@ -265,6 +265,16 @@
     "contactDpoLabel": "DPO / privacidad",
     "responsibleDisclosure": "Formato RFC 9116 para investigadores de seguridad"
   },
+  "sampleReport": {
+    "back": "Volver",
+    "badge": "Informe de muestra",
+    "title": "Auditoría de la política de privacidad — {org}",
+    "subtitle": "Generado por LexyFlow en {seconds} segundos. {count, plural, one {# marco cruzado} other {# marcos cruzados}}. Puntuación de riesgo: {score} / 100.",
+    "findings": "Hallazgos",
+    "recommendation": "Recomendación",
+    "footerBody": "Los informes reales incluyen pruebas del documento original, un calendario de remediación y un PDF descargable — en más de 100 idiomas.",
+    "footerCta": "Lanzar una auditoría sobre tu propio documento"
+  },
   "dashboard": {
     "title": "Auditorías",
     "signedInAs": "Conectado como <bold>{email}</bold>.",

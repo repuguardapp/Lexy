@@ -265,6 +265,16 @@
     "contactDpoLabel": "DPO / プライバシー",
     "responsibleDisclosure": "セキュリティ研究者向けの RFC 9116 形式"
   },
+  "sampleReport": {
+    "back": "戻る",
+    "badge": "サンプルレポート",
+    "title": "プライバシーポリシー監査 — {org}",
+    "subtitle": "LexyFlow が {seconds} 秒で生成。{count} 件の規制と相互参照。リスクスコア: {score} / 100。",
+    "findings": "指摘事項",
+    "recommendation": "推奨対応",
+    "footerBody": "実際のレポートには、原文書からの証拠、是正スケジュール、ダウンロード可能な PDF が含まれます — 100 以上の言語に対応。",
+    "footerCta": "自分のドキュメントで監査を実行"
+  },
   "dashboard": {
     "title": "監査一覧",
     "signedInAs": "<bold>{email}</bold> としてログイン中。",

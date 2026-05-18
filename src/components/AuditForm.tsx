@@ -62,6 +62,16 @@ interface Props {
   defaultLanguage: string;
   /** Stamped from the server-rendered page so we don't trust the client. */
   organizationId: string;
+  /**
+   * Current URL locale (e.g. 'fr', 'ar'). The audit API returns
+   * redirect URLs without a locale prefix (e.g. `/dashboard/<id>`)
+   * because it has no view of the user's UI session. We prepend the
+   * locale here so the post-audit landing stays in the same language
+   * as the form they just submitted from — otherwise next-intl's
+   * middleware would auto-detect from Accept-Language and a French-
+   * browser user submitting an Arabic audit would land on /fr/...
+   */
+  locale: string;
 }
 
 type View =
@@ -117,7 +127,18 @@ class AuditError extends Error {
  * Success has no UI state because we navigate away the moment the
  * fetch resolves — see `window.location.assign(body.redirect)` below.
  */
-export function AuditForm({ labels, frameworks, defaultLanguage, organizationId }: Props) {
+export function AuditForm({ labels, frameworks, defaultLanguage, organizationId, locale }: Props) {
+  // Prefix a path returned by the audit API with the active UI locale
+  // unless it already carries one. Idempotent — calling it twice on
+  // `/ar/dashboard/x` still yields `/ar/dashboard/x`.
+  const withLocale = (path: string): string => {
+    if (!path.startsWith('/')) return path;
+    const first = path.split('/')[1] ?? '';
+    // If the first segment already looks like a BCP-47 tag (2-5 chars,
+    // letters + optional region), trust it and pass through.
+    if (/^[a-z]{2}(-[a-z0-9]{2,4})?$/i.test(first)) return path;
+    return `/${locale}${path}`;
+  };
   const [view, setView] = useState<View>({ phase: 'idle' });
   // Inline file-validation state. Set the moment the user picks a
   // too-large file; cleared on a valid pick. Distinct from `view.phase
@@ -156,7 +177,7 @@ export function AuditForm({ labels, frameworks, defaultLanguage, organizationId 
       // 402 Payment Required: out of credits — honour the redirect.
       if (res.status === 402) {
         const body = (await res.json().catch(() => ({}))) as { redirect?: string };
-        window.location.assign(body.redirect ?? '/pricing');
+        window.location.assign(withLocale(body.redirect ?? '/pricing'));
         return;
       }
 
@@ -205,7 +226,7 @@ export function AuditForm({ labels, frameworks, defaultLanguage, organizationId 
             setView({ phase: 'running', progress: evt.progress });
           } else if (evt.type === 'final') {
             if (evt.ok && evt.redirect) {
-              window.location.assign(evt.redirect);
+              window.location.assign(withLocale(evt.redirect));
               return;
             }
             // Final event with ok:false carries the structured code;

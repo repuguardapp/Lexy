@@ -74,6 +74,7 @@ export default async function EmbedAuditPage({ searchParams }: PageProps) {
               }
               defaultLanguage={locale}
               organizationId={ANONYMOUS_ORG_ID}
+              locale={locale}
             />
 
             <EmbedAutosize />

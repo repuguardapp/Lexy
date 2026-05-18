@@ -69,6 +69,7 @@ export default async function AuditPage({ params: { locale } }: PageProps) {
         frameworks={FRAMEWORKS.map((f) => ({ id: f.id, name: f.name }))}
         defaultLanguage={locale}
         organizationId={orgId}
+        locale={locale}
       />
     </div>
   );

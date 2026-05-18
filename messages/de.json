@@ -265,6 +265,19 @@
     "contactDpoLabel": "DSB / Datenschutz",
     "responsibleDisclosure": "RFC 9116-Format für Sicherheitsforscher"
   },
+  "dpa": {
+    "courtesyTitle": "Höflichkeitsübersetzung",
+    "courtesyBody": "Die englische Fassung dieses Auftragsverarbeitungsvertrags ist die verbindliche Originalfassung. Die nachstehende Zusammenfassung soll nicht-englischsprachigen Leserinnen und Lesern helfen, die Struktur der Vereinbarung zu verstehen; sie ersetzt den juristischen Text nicht.",
+    "summaryTitle": "Was dieser AVV abdeckt, in einfachen Worten:",
+    "summary": {
+      "point1": "LexyFlow verarbeitet Ihre Dokumente ausschließlich nach Ihrer Weisung, als Auftragsverarbeiter gemäß DSGVO (und vergleichbaren Regimen weltweit).",
+      "point2": "Unter-Auftragsverarbeiter (Anthropic, OpenAI, Supabase, Stripe, Vercel, Resend, Sentry) sind alle an Standardvertragsklauseln gebunden; Sie erhalten 30 Tage Vorankündigung bei jeder Änderung.",
+      "point3": "Sicherheitsstack: TLS 1.3 in Übertragung, AES-256-GCM in Ruhe, Quelldokumente nach dem Audit gelöscht, Postgres-RLS, 24-Stunden-Meldepflicht-SLA.",
+      "point4": "Sie können unsere Compliance einmal pro Jahr prüfen; Anfragen betroffener Personen (Auskunft, Löschung) werden weitergeleitet und unterstützt.",
+      "point5": "Bei Vertragsende werden alle Ihre personenbezogenen Daten innerhalb von 30 Tagen gelöscht oder zurückgegeben, sofern keine gesetzliche Aufbewahrungspflicht besteht."
+    },
+    "requestSigned": "Benötigen Sie ein unterzeichnetes Exemplar in der Sprache Ihrer Jurisdiktion? Schreiben Sie an <a>legal@lexyflow.com</a> — wir senden auf Anfrage beglaubigte Übersetzungen."
+  },
   "sampleReport": {
     "back": "Zurück",
     "badge": "Beispielbericht",

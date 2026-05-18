@@ -1,4 +1,5 @@
-import { unstable_setRequestLocale } from 'next-intl/server';
+import { ShieldCheck } from 'lucide-react';
+import { getTranslations, unstable_setRequestLocale } from 'next-intl/server';
 import { LegalShell } from '@/components/LegalShell';
 import { buildHreflangAlternates } from '@/lib/hreflang';
 
@@ -17,9 +18,52 @@ export async function generateMetadata({ params }: PageProps) {
 
 export default async function DpaPage({ params: { locale } }: PageProps) {
   unstable_setRequestLocale(locale);
+  const t = await getTranslations('dpa');
+
+  // The full DPA body below is intentionally English. It's a binding
+  // legal instrument and the English version is the master copy. We
+  // surface a localised plain-language summary + a "courtesy translation"
+  // notice so a non-English-reading buyer can still understand the
+  // shape of what they're signing, then point them at legal@ for a
+  // signed counterpart in their language. AI-translating the binding
+  // text would introduce material legal risk (mistranslated terms of
+  // art like "controller" vs "processor") so we deliberately don't.
+  const isCourtesyLocale = locale !== 'en';
 
   return (
     <LegalShell title="Data Processing Agreement (DPA)" effective="January 1, 2026">
+      {isCourtesyLocale && (
+        <aside className="not-prose mb-8 grid gap-4 rounded-lg border border-amber-300 bg-amber-50 p-5 dark:border-amber-900/40 dark:bg-amber-950/30">
+          <div className="flex items-start gap-3">
+            <ShieldCheck className="mt-0.5 h-5 w-5 flex-shrink-0 text-amber-700 dark:text-amber-200" aria-hidden />
+            <div className="grid gap-2 text-sm text-amber-900 dark:text-amber-100">
+              <p className="font-semibold">{t('courtesyTitle')}</p>
+              <p className="text-pretty">{t('courtesyBody')}</p>
+            </div>
+          </div>
+
+          <div className="grid gap-2 text-sm text-amber-900 dark:text-amber-100">
+            <p className="font-semibold">{t('summaryTitle')}</p>
+            <ul className="grid list-disc gap-1.5 ps-5 text-pretty">
+              <li>{t('summary.point1')}</li>
+              <li>{t('summary.point2')}</li>
+              <li>{t('summary.point3')}</li>
+              <li>{t('summary.point4')}</li>
+              <li>{t('summary.point5')}</li>
+            </ul>
+            <p className="mt-2 text-pretty">
+              {t.rich('requestSigned', {
+                a: (chunks) => (
+                  <a href="mailto:legal@lexyflow.com" className="font-medium underline decoration-amber-700/40 underline-offset-2">
+                    {chunks}
+                  </a>
+                )
+              })}
+            </p>
+          </div>
+        </aside>
+      )}
+
       <p>
         This Data Processing Agreement (&ldquo;DPA&rdquo;) supplements the
         LexyFlow Terms of Service. It applies whenever LexyFlow processes

@@ -265,6 +265,19 @@
     "contactDpoLabel": "DPO / privacy",
     "responsibleDisclosure": "RFC 9116 format for security researchers"
   },
+  "dpa": {
+    "courtesyTitle": "Courtesy translation",
+    "courtesyBody": "The English version of this Data Processing Agreement is the binding master copy. The summary below is provided to help non-English readers understand the shape of the agreement; it is not a substitute for the legal text.",
+    "summaryTitle": "What this DPA covers, in plain language:",
+    "summary": {
+      "point1": "LexyFlow processes your documents only on your instructions, as a processor under GDPR (and equivalent regimes worldwide).",
+      "point2": "Sub-processors (Anthropic, OpenAI, Supabase, Stripe, Vercel, Resend, Sentry) are all bound by Standard Contractual Clauses; you get 30 days' notice before any change.",
+      "point3": "Security stack: TLS 1.3 in transit, AES-256-GCM at rest, source documents wiped after audit, Postgres RLS, 24-hour breach-notification SLA.",
+      "point4": "You can audit our compliance once a year; data-subject requests (access, deletion) are forwarded and supported.",
+      "point5": "On termination, all your Personal Data is deleted or returned within 30 days, except where law requires retention."
+    },
+    "requestSigned": "Need a signed counterpart in your jurisdiction's language? Email <a>legal@lexyflow.com</a> — we send certified translations on request."
+  },
   "sampleReport": {
     "back": "Back",
     "badge": "Sample report",

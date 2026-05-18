@@ -265,6 +265,19 @@
     "contactDpoLabel": "DPO / privacidade",
     "responsibleDisclosure": "Formato RFC 9116 para pesquisadores de segurança"
   },
+  "dpa": {
+    "courtesyTitle": "Tradução de cortesia",
+    "courtesyBody": "A versão em inglês deste Acordo de Tratamento de Dados é a cópia mestra vinculante. O resumo abaixo é fornecido para ajudar leitores não anglófonos a entender a estrutura do acordo; não substitui o texto jurídico.",
+    "summaryTitle": "O que este DPA cobre, em linguagem clara:",
+    "summary": {
+      "point1": "A LexyFlow processa seus documentos somente conforme suas instruções, como operadora sob a LGPD (e regimes equivalentes em todo o mundo).",
+      "point2": "Os suboperadores (Anthropic, OpenAI, Supabase, Stripe, Vercel, Resend, Sentry) estão todos vinculados a Cláusulas Contratuais Padrão; você é avisado com 30 dias de antecedência antes de qualquer mudança.",
+      "point3": "Stack de segurança: TLS 1.3 em trânsito, AES-256-GCM em repouso, documentos-fonte apagados após a auditoria, RLS Postgres, SLA de notificação de incidente em 24 h.",
+      "point4": "Você pode auditar nossa conformidade uma vez por ano; solicitações de titulares (acesso, exclusão) são encaminhadas e apoiadas.",
+      "point5": "Ao término do contrato, todos os seus dados pessoais são apagados ou devolvidos em 30 dias, salvo retenção exigida por lei."
+    },
+    "requestSigned": "Precisa de uma cópia assinada no idioma da sua jurisdição? Escreva para <a>legal@lexyflow.com</a> — enviamos traduções juramentadas mediante solicitação."
+  },
   "sampleReport": {
     "back": "Voltar",
     "badge": "Relatório de exemplo",

@@ -265,6 +265,19 @@
     "contactDpoLabel": "DPO / vie privée",
     "responsibleDisclosure": "Format RFC 9116 pour les chercheurs en sécurité"
   },
+  "dpa": {
+    "courtesyTitle": "Traduction de courtoisie",
+    "courtesyBody": "La version anglaise de cet accord de traitement des données fait foi. Le résumé ci-dessous est fourni pour aider les lecteurs non anglophones à comprendre la structure de l'accord ; il ne remplace pas le texte juridique.",
+    "summaryTitle": "Ce que couvre ce DPA, en clair :",
+    "summary": {
+      "point1": "LexyFlow traite vos documents uniquement selon vos instructions, en tant que sous-traitant au sens du RGPD (et régimes équivalents dans le monde).",
+      "point2": "Les sous-traitants ultérieurs (Anthropic, OpenAI, Supabase, Stripe, Vercel, Resend, Sentry) sont tous liés par des Clauses Contractuelles Types ; vous êtes prévenu 30 jours avant tout changement.",
+      "point3": "Stack de sécurité : TLS 1.3 en transit, AES-256-GCM au repos, documents source effacés après audit, RLS Postgres, SLA de notification de violation à 24 h.",
+      "point4": "Vous pouvez auditer notre conformité une fois par an ; les demandes des personnes concernées (accès, suppression) sont transmises et soutenues.",
+      "point5": "À la résiliation, toutes vos données personnelles sont supprimées ou restituées sous 30 jours, sauf obligation légale de conservation."
+    },
+    "requestSigned": "Besoin d'un exemplaire signé dans la langue de votre juridiction ? Écrivez à <a>legal@lexyflow.com</a> — nous envoyons des traductions certifiées sur demande."
+  },
   "sampleReport": {
     "back": "Retour",
     "badge": "Rapport d'exemple",

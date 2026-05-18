@@ -265,6 +265,19 @@
     "contactDpoLabel": "DPO / プライバシー",
     "responsibleDisclosure": "セキュリティ研究者向けの RFC 9116 形式"
   },
+  "dpa": {
+    "courtesyTitle": "参考訳",
+    "courtesyBody": "本データ処理契約の英語版が正本です。以下の要約は、英語を母語としない読者が契約の構造を理解できるように提供するもので、法的拘束力のある原文の代替ではありません。",
+    "summaryTitle": "本 DPA の要点（平易な表現）：",
+    "summary": {
+      "point1": "LexyFlow は GDPR（および世界各地の同等の制度）の処理者として、お客様の指示に基づいてのみドキュメントを処理します。",
+      "point2": "再委託先（Anthropic、OpenAI、Supabase、Stripe、Vercel、Resend、Sentry）はすべて標準契約条項に拘束されます。変更時は 30 日前に通知します。",
+      "point3": "セキュリティスタック：通信は TLS 1.3、保存は AES-256-GCM、監査後はソースドキュメントを消去、Postgres RLS、24 時間以内の侵害通知 SLA。",
+      "point4": "コンプライアンス監査は年 1 回まで可能です。データ主体からの請求（開示、削除）は転送し、対応を支援します。",
+      "point5": "契約終了時には、法令による保存義務がある場合を除き、すべての個人データを 30 日以内に削除または返却します。"
+    },
+    "requestSigned": "貴社の管轄言語で署名済の契約書が必要ですか？ <a>legal@lexyflow.com</a> までご連絡ください — 認証翻訳をご要望に応じてお送りします。"
+  },
   "sampleReport": {
     "back": "戻る",
     "badge": "サンプルレポート",

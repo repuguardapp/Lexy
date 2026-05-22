@@ -6,6 +6,7 @@ import { FRAMEWORKS } from '@/lib/legal-frameworks';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { getCurrentUser } from '@/lib/supabase-server';
 
 interface PageProps {
   params: { locale: string };
@@ -15,10 +16,15 @@ export default async function HomePage({ params: { locale } }: PageProps) {
   unstable_setRequestLocale(locale);
   const t = await getTranslations('home');
   const available = await discoverLocales();
+  // Server-side auth check so the hero CTA matches the visitor's
+  // actual state on first paint — no client flash of "Sign in" before
+  // a hydration replaces it with "Open dashboard".
+  const user = await getCurrentUser();
+  const isAuthenticated = !!user;
 
   return (
     <div className="space-y-32 pb-20">
-      <Hero locale={locale} t={t} />
+      <Hero locale={locale} t={t} isAuthenticated={isAuthenticated} />
       <Stats t={t} available={available.length} />
       <Features t={t} />
     </div>
@@ -31,10 +37,12 @@ export default async function HomePage({ params: { locale } }: PageProps) {
 
 async function Hero({
   locale,
-  t
+  t,
+  isAuthenticated
 }: {
   locale: string;
   t: Awaited<ReturnType<typeof getTranslations<'home'>>>;
+  isAuthenticated: boolean;
 }) {
   // Surface the regulations as inline chips so the global-compliance
   // promise is communicated before the user reads a single sentence.
@@ -76,12 +84,21 @@ async function Hero({
         </p>
 
         <div className="flex flex-wrap items-center justify-center gap-3 pt-2">
-          <Button asChild size="lg">
-            <Link href="/audit">
-              {t('hero.cta')}
-              <ArrowRight className="ms-2 h-4 w-4 rtl:-scale-x-100" aria-hidden />
-            </Link>
-          </Button>
+          {isAuthenticated ? (
+            <Button asChild size="lg">
+              <Link href="/dashboard">
+                {t('hero.authedCta')}
+                <ArrowRight className="ms-2 h-4 w-4 rtl:-scale-x-100" aria-hidden />
+              </Link>
+            </Button>
+          ) : (
+            <Button asChild size="lg">
+              <Link href="/audit">
+                {t('hero.cta')}
+                <ArrowRight className="ms-2 h-4 w-4 rtl:-scale-x-100" aria-hidden />
+              </Link>
+            </Button>
+          )}
           <Button asChild size="lg" variant="outline">
             <Link href="/sample-report">{t('hero.secondaryCta')}</Link>
           </Button>

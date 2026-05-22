@@ -12,7 +12,8 @@
     "pricing": "料金",
     "docs": "ドキュメント",
     "signIn": "ログイン",
-    "startAudit": "監査を開始"
+    "startAudit": "監査を開始",
+    "myDashboard": "マイダッシュボード"
   },
   "home": {
     "hero": {
@@ -20,6 +21,7 @@
       "title": "LexyFlow：グローバル・コンプライアンスを、自動化。",
       "subtitle": "ポリシー・契約書・モデルカードをアップロードしてください。LexyFlow は GDPR、AI法、LGPD、APPI と数秒で突合し、選択した言語でレポートを作成します。",
       "cta": "無料で監査を開始",
+      "authedCta": "Enterprise ワークスペースを開く",
       "secondaryCta": "サンプルレポートを見る"
     },
     "trust": {

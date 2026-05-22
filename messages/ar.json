@@ -12,7 +12,8 @@
     "pricing": "الأسعار",
     "docs": "التوثيق",
     "signIn": "تسجيل الدخول",
-    "startAudit": "بدء تدقيق"
+    "startAudit": "بدء تدقيق",
+    "myDashboard": "لوحة تحكّمي"
   },
   "home": {
     "hero": {
@@ -20,6 +21,7 @@
       "title": "LexyFlow: الامتثال العالمي، آلياً.",
       "subtitle": "أرفِق سياسة أو عقداً أو نموذج بيانات. يقارنه LexyFlow بـ GDPR وAI Act وLGPD وAPPI وقوانين الخليج في ثوانٍ — ويُحرّر التقرير بلغتك.",
       "cta": "بدء تدقيق مجاني",
+      "authedCta": "الدخول إلى مساحتي Enterprise",
       "secondaryCta": "عرض تقرير نموذجي"
     },
     "trust": {

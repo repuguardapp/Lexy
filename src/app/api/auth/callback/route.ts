@@ -33,11 +33,26 @@ export async function GET(request: NextRequest) {
   const code = url.searchParams.get('code');
   const tokenHash = url.searchParams.get('token_hash');
   const type = url.searchParams.get('type');
-  const next = url.searchParams.get('next') ?? '/';
+  const rawNext = url.searchParams.get('next');
 
-  // Build the destination redirect up front. Cookies set during
-  // exchangeCodeForSession will be attached to THIS response.
-  const safeNext = /^\/[^/]/.test(next) ? next : '/';
+  // Resolve where to drop the freshly-signed-in user.
+  //
+  // The magic-link route sets `emailRedirectTo` to a locale-aware
+  // `/<locale>/dashboard`, which Supabase forwards to the email hook
+  // and the email hook splices in as `?next=`. If that chain breaks
+  // anywhere — Supabase config drift, hook misconfiguration, legacy
+  // verify URL — `next` arrives missing, blank, "/", or pointing
+  // back at `/api/auth/callback` (recursive loop). In every one of
+  // those cases the user lands on the public landing page after a
+  // successful auth, which looks indistinguishable from being signed
+  // out: the bug surfaced in prod on the May 22 magic-link test and
+  // wrecks the "I just logged in" moment.
+  //
+  // Hard rule: a magic link is an *authentication intent*. We never
+  // honour a `next` that would drop the user on `/`. We coerce to
+  // `/dashboard` and let the middleware prefix the locale from the
+  // session cookie / Accept-Language.
+  const safeNext = resolveAuthDestination(rawNext);
   const response = NextResponse.redirect(new URL(safeNext, url.origin));
 
   const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
@@ -81,6 +96,19 @@ export async function GET(request: NextRequest) {
 
   console.log('[auth/callback] session established', { redirectTo: safeNext });
   return response;
+}
+
+/**
+ * Coerce an attacker- or hook-supplied `next` to a safe destination.
+ * Returns `/dashboard` for anything that is missing, root, recursive,
+ * or fails the same-origin invariant `/^\/[^/]/` (which blocks
+ * `//evil.com` schema-relative redirects).
+ */
+function resolveAuthDestination(rawNext: string | null): string {
+  if (!rawNext || !/^\/[^/]/.test(rawNext)) return '/dashboard';
+  if (rawNext === '/') return '/dashboard';
+  if (rawNext.startsWith('/api/')) return '/dashboard';
+  return rawNext;
 }
 
 function redirectToLogin(url: URL, reason: string) {

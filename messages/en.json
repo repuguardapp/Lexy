@@ -12,7 +12,8 @@
     "pricing": "Pricing",
     "docs": "Documentation",
     "signIn": "Sign in",
-    "startAudit": "Start an audit"
+    "startAudit": "Start an audit",
+    "myDashboard": "My dashboard"
   },
   "home": {
     "hero": {
@@ -20,6 +21,7 @@
       "title": "LexyFlow: global compliance, automated.",
       "subtitle": "Drop a policy, contract, or model card. LexyFlow cross-references it with GDPR, the EU AI Act, LGPD and APPI in seconds — and writes the report in your language.",
       "cta": "Run a free audit",
+      "authedCta": "Open my Enterprise workspace",
       "secondaryCta": "View a sample report"
     },
     "trust": {

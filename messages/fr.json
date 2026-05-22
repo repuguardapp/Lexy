@@ -12,7 +12,8 @@
     "pricing": "Tarifs",
     "docs": "Documentation",
     "signIn": "Se connecter",
-    "startAudit": "Lancer un audit"
+    "startAudit": "Lancer un audit",
+    "myDashboard": "Mon tableau de bord"
   },
   "home": {
     "hero": {
@@ -20,6 +21,7 @@
       "title": "LexyFlow : la conformité mondiale, automatisée.",
       "subtitle": "Déposez une politique, un contrat ou une fiche modèle. LexyFlow le confronte au RGPD, à l'AI Act, à la LGPD et à l'APPI en quelques secondes — et rédige le rapport dans votre langue.",
       "cta": "Lancer un audit gratuit",
+      "authedCta": "Accéder à mon espace Enterprise",
       "secondaryCta": "Voir un rapport d'exemple"
     },
     "trust": {

@@ -12,7 +12,8 @@
     "pricing": "Preise",
     "docs": "Dokumentation",
     "signIn": "Anmelden",
-    "startAudit": "Audit starten"
+    "startAudit": "Audit starten",
+    "myDashboard": "Mein Dashboard"
   },
   "home": {
     "hero": {
@@ -20,6 +21,7 @@
       "title": "LexyFlow: globale Compliance, automatisiert.",
       "subtitle": "Laden Sie eine Richtlinie, einen Vertrag oder eine Modellkarte hoch. LexyFlow prüft sie in Sekunden gegen DSGVO, KI-Verordnung, LGPD und APPI — und verfasst den Bericht in Ihrer Sprache.",
       "cta": "Kostenloses Audit starten",
+      "authedCta": "Zu meinem Enterprise-Bereich",
       "secondaryCta": "Beispielbericht ansehen"
     },
     "trust": {

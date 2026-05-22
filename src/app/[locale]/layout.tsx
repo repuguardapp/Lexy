@@ -17,6 +17,25 @@ export async function generateStaticParams() {
   return NATIVE_LOCALE_CODES.map((locale) => ({ locale }));
 }
 
+/**
+ * Force per-request rendering of the locale layout.
+ *
+ * Without this, Next.js prerenders the layout at build time (because
+ * `generateStaticParams` enumerates all locales as static). The
+ * `getCurrentUser()` call below then evaluates with NO cookies — there
+ * is no request at build time — so `isAuthenticated` is always false
+ * and the header is permanently locked to the signed-out CTAs ("Sign
+ * in" / "Start an audit"). Marking the layout dynamic forces it to
+ * re-run on every request, picking up the user's session cookie.
+ *
+ * `force-dynamic` is the right knob here (not `revalidate = 0`)
+ * because the layout depends on per-user state, not time-based
+ * invalidation. Page components nested under the layout that are
+ * still statically generated (e.g. /sample-report) continue to be
+ * prerendered — only the layout shell becomes dynamic.
+ */
+export const dynamic = 'force-dynamic';
+
 interface LayoutProps {
   children: ReactNode;
   params: { locale: string };

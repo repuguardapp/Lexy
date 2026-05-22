@@ -6,7 +6,7 @@ import { detectLocale } from '@/lib/locale-detection';
 const intlMiddleware = createMiddleware({
   locales: NATIVE_LOCALE_CODES as unknown as string[],
   defaultLocale: DEFAULT_LOCALE,
-  localePrefix: 'as-needed',
+  localePrefix: 'always',
   localeDetection: false
 });
 

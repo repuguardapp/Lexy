@@ -67,10 +67,19 @@ export async function createCheckoutSession(opts: CheckoutOptions) {
 
   // `exactOptionalPropertyTypes` forbids passing `undefined` for optional
   // fields — we only include `customer_email` when we actually have one.
+  //
+  // Currency note: we deliberately do NOT pass `currency` here. The
+  // base Price is registered in EUR; Stripe Adaptive Pricing (enabled
+  // in the Dashboard) auto-detects the buyer's location at the
+  // hosted checkout page and converts to their local currency
+  // (SAR for KSA, QAR for Qatar, AED for UAE, BHD/KWD/OMR for the
+  // smaller GCC states, plus the rest of the supported list).
+  // Passing an explicit `currency` would override that auto-detect
+  // and force the buyer into a single fixed currency — exactly the
+  // outcome we want Adaptive Pricing to avoid.
   const params: Stripe.Checkout.SessionCreateParams = {
     mode: 'subscription',
     locale: stripeLocale,
-    currency: descriptor.currency.toLowerCase(),
     line_items: [{ price: priceIdFor(opts.plan), quantity: 1 }],
     automatic_tax: { enabled: true },
     tax_id_collection: { enabled: true },

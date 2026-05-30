@@ -10,6 +10,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { supabaseService } from '@/lib/supabase';
 import { createSupabaseServerClient, getCurrentUser, organizationIdFromUser } from '@/lib/supabase-server';
 import { getTierForOrg } from '@/lib/tier';
+import { ANONYMOUS_ORG_ID, applyPaywall, isPaywalled, type ViewerTier } from '@/lib/paywall';
 import { NATIVE_LOCALE_CODES } from '@/i18n/locales';
 import type { Severity } from '@/types/audit';
 
@@ -45,13 +46,14 @@ interface AuditDetailRow {
   completed_at: string | null;
 }
 
-// The anonymous-org placeholder is what /audit (and the embed widget)
-// stamps onto unauth runs — see src/app/[locale]/audit/page.tsx. Reports
-// produced under this org are intentionally viewable by anyone holding
-// the audit UUID: it is the equivalent of a Dropbox share link, and the
-// UUID is unguessable. Auth is only enforced for reports owned by a
-// real (paying) organization.
-const ANONYMOUS_ORG_ID = '00000000-0000-0000-0000-000000000000';
+// ANONYMOUS_ORG_ID is the placeholder /audit (and the embed widget)
+// stamp onto unauth runs — see src/app/[locale]/audit/page.tsx.
+// Reports produced under this org are intentionally viewable by
+// anyone holding the audit UUID: it is the equivalent of a Dropbox
+// share link, and the UUID is unguessable. Auth is only enforced for
+// reports owned by a real (paying) organization. The constant lives
+// in @/lib/paywall alongside the slicing predicate so the share-link
+// carve-out and the paywall predicate cannot drift out of sync.
 
 export default async function AuditDetailPage({ params }: PageProps) {
   unstable_setRequestLocale(params.locale);
@@ -99,7 +101,7 @@ export default async function AuditDetailPage({ params }: PageProps) {
   // their tier so we can decide between full report and teaser view.
   // Anonymous-org audits are share-link contracts — never paywalled
   // regardless of viewer tier.
-  let viewerTier: 'free' | 'paid' = 'paid';
+  let viewerTier: ViewerTier = 'paid';
   let viewerOwnsAudit = false;
   if (a.organization_id !== ANONYMOUS_ORG_ID) {
     const user = await getCurrentUser();
@@ -109,7 +111,11 @@ export default async function AuditDetailPage({ params }: PageProps) {
       viewerTier = await getTierForOrg(supabaseService(), a.organization_id);
     }
   }
-  const paywalled = a.organization_id !== ANONYMOUS_ORG_ID && viewerOwnsAudit && viewerTier === 'free';
+  const paywalled = isPaywalled({
+    organizationId: a.organization_id,
+    viewerOwnsAudit,
+    viewerTier
+  });
 
   const { data: findings } = await supabase
     .from('audit_findings')
@@ -120,9 +126,10 @@ export default async function AuditDetailPage({ params }: PageProps) {
   const allRows: FindingRow[] = (findings ?? []) as FindingRow[];
   // In paywall mode we only render the first finding in full; the
   // rest are surfaced as a count + locked CTA card. The full data
-  // never reaches the client when paywalled — we slice server-side.
-  const visibleRows: FindingRow[] = paywalled ? allRows.slice(0, 1) : allRows;
-  const hiddenCount = paywalled ? Math.max(0, allRows.length - visibleRows.length) : 0;
+  // never reaches the client when paywalled — applyPaywall does the
+  // server-side slice so the withheld findings never enter the HTML
+  // (or the RSC flight payload).
+  const { visible: visibleRows, hidden: hiddenCount } = applyPaywall(allRows, paywalled);
 
   return (
     <div className="py-12 print:py-0">

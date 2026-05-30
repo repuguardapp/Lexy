@@ -41,21 +41,33 @@ vi.mock('@/lib/stripe', () => ({
   createCheckoutSession: (opts: unknown) => mockCreateCheckoutSession(opts)
 }));
 
-// The anonymous-org happy path runs past the spoof guard and into
-// the audit pipeline (rate-limit lookup, credit RPC, extraction…),
-// none of which we want to actually drive from this test. A throwing
-// supabaseService() is enough: if our spoof guard correctly lets the
-// anon request through, the throw bubbles up as a 5xx — anything
-// other than 401/403, which is what the assertion checks.
+// We stub supabaseService() as a counter that throws. The double
+// duty is intentional:
+//
+//   • Throwing means we never accidentally drive the audit pipeline
+//     (rate-limit lookup, credit RPC, AI calls, persistence) from a
+//     unit test. If a future refactor introduces a 500 before the
+//     spoof guard, the throw blows up loudly in the test we care
+//     about instead of silently passing.
+//
+//   • Counting gives us a hard assertion that the spoof-guard
+//     code path NEVER calls into the DB layer. The whole point of
+//     the fix is that try_consume_audit_credit must not be reached
+//     when the request is rejected for org-mismatch — without this
+//     spy, a future refactor that moves the RPC above the guard
+//     would still pass the 401/403 assertions because the early
+//     return masks the side effect.
+const supabaseServiceSpy = vi.fn(() => {
+  throw new Error('supabase_mocked');
+});
 vi.mock('@/lib/supabase', () => ({
-  supabaseService: () => {
-    throw new Error('supabase_mocked');
-  }
+  supabaseService: () => supabaseServiceSpy()
 }));
 
 beforeEach(() => {
   mockGetCurrentUser.mockReset();
   mockCreateCheckoutSession.mockClear();
+  supabaseServiceSpy.mockClear();
 });
 
 afterEach(() => {
@@ -141,6 +153,11 @@ describe('POST /api/audit — org spoof guard', () => {
     expect(res.status).toBe(401);
     const body = await res.json();
     expect(body.error).toBe('unauthenticated');
+    // Hard contract: a spoofed-with-no-session request must not
+    // reach the supabase layer. If it did, the credit RPC could
+    // run before the 401 was returned and the org being spoofed
+    // would silently lose a credit.
+    expect(supabaseServiceSpy).not.toHaveBeenCalled();
   });
 
   it('rejects with 403 when the session org id differs from the form org id', async () => {
@@ -148,6 +165,12 @@ describe('POST /api/audit — org spoof guard', () => {
     expect(res.status).toBe(403);
     const body = await res.json();
     expect(body.error).toBe('organization_mismatch');
+    // Same contract as above — confirmed for the logged-in
+    // attacker path. The credit RPC, the rate-limit table read,
+    // the audit row insert: none must execute when the guard
+    // rejects. supabaseService() being uncalled is the umbrella
+    // proof for all three.
+    expect(supabaseServiceSpy).not.toHaveBeenCalled();
   });
 
   it('does NOT require auth for anonymous-org submissions (public share-link flow)', async () => {
@@ -156,7 +179,8 @@ describe('POST /api/audit — org spoof guard', () => {
     // into the audit pipeline. We mock supabaseService() to throw so
     // we don't drive the rest of the pipeline; the assertion is that
     // the response is not 401 / 403 (which would mean our guard
-    // wrongly bounced an anonymous submission).
+    // wrongly bounced an anonymous submission) AND that the supabase
+    // layer was actually reached (which confirms the guard cleared).
     try {
       const res = await postAudit(ANON_ORG, false);
       expect(res.status).not.toBe(401);
@@ -168,5 +192,6 @@ describe('POST /api/audit — org spoof guard', () => {
       expect(err).toBeInstanceOf(Error);
       expect((err as Error).message).toBe('supabase_mocked');
     }
+    expect(supabaseServiceSpy).toHaveBeenCalled();
   });
 });

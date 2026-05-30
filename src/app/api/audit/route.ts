@@ -6,6 +6,7 @@ import { encryptDocument } from '@/lib/document-crypto';
 import { runMultiPassAudit } from '@/lib/multi-pass-engine';
 import { clientIpFrom, rateLimit } from '@/lib/rate-limit';
 import { supabaseService } from '@/lib/supabase';
+import { getCurrentUser, organizationIdFromUser } from '@/lib/supabase-server';
 import { FREE_TIER_MAX_BYTES, getTierForOrg } from '@/lib/tier';
 import { hashDocument, wipeBuffer } from '@/lib/zero-knowledge';
 import type { FrameworkId } from '@/lib/legal-frameworks';
@@ -70,7 +71,9 @@ type AuditError =
   | 'anthropic_error'
   | 'openai_error'
   | 'multipass_failed'
-  | 'supabase_write_failed';
+  | 'supabase_write_failed'
+  | 'unauthenticated'
+  | 'organization_mismatch';
 
 function errorJson(error: AuditError, detail: string, status: number, extra: Record<string, unknown> = {}) {
   return NextResponse.json({ error, detail, ...extra }, { status });
@@ -122,6 +125,27 @@ export async function POST(request: Request) {
   } catch (err) {
     return errorJson('invalid_metadata', err instanceof Error ? err.message : String(err), 400);
   }
+
+  // ---- 1b. Org spoof guard ------------------------------------------
+  // The anonymous-org UUID is the public-share-link placeholder and
+  // intentionally needs no auth — anyone can submit a one-shot audit
+  // against it without an account. For every other UUID we require
+  // an authenticated session whose org id matches what the client
+  // claims, otherwise a logged-in user from org A could spend org B's
+  // audit credits, pollute B's audit history with arbitrary
+  // documents, or trip B's per-org rate limit (50/day) as a DoS.
+  const isAnonymousOrg = meta.organizationId === '00000000-0000-0000-0000-000000000000';
+  if (!isAnonymousOrg) {
+    const user = await getCurrentUser();
+    if (!user) {
+      return errorJson('unauthenticated', 'Sign in required for org-scoped audits.', 401);
+    }
+    const sessionOrgId = organizationIdFromUser(user);
+    if (sessionOrgId !== meta.organizationId) {
+      log('org_mismatch_rejected', { claimed: meta.organizationId, session: sessionOrgId });
+      return errorJson('organization_mismatch', 'Claimed organization does not match session.', 403);
+    }
+  }
   log('input_parsed', { fileSize: file.size, frameworks: meta.frameworks, lang: meta.targetLanguage });
 
   // ---- 2. Rate limit ------------------------------------------------
@@ -155,7 +179,6 @@ export async function POST(request: Request) {
   }
 
   const db = supabaseService();
-  const isAnonymousOrg = meta.organizationId === '00000000-0000-0000-0000-000000000000';
 
   // ---- 3. Credit gate + free-trial fallback (atomic) ----------------
   // Order of precedence:
